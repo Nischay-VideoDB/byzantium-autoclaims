@@ -1,0 +1,24 @@
+# Core
+fastapi
+uvicorn[standard]
+python-dotenv
+pydantic
+python-multipart
+
+# Database
+sqlalchemy
+
+# AI / LLM
+anthropic
+openai
+
+# HTTP
+httpx
+aiofiles
+
+# Sponsor SDKs
+videodb
+daytona-sdk
+
+# Utils
+python-dateutil

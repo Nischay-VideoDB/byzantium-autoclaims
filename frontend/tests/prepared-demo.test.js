@@ -9,6 +9,7 @@ import {
   isPreparedShowcase,
   preparedClaim,
   preparedPipelineEvents,
+  preparedStepSubtitle,
 } from "../src/preparedDemo.js";
 
 test("prepared public scenarios are complete, non-binding, and provider-free", () => {
@@ -33,6 +34,9 @@ test("prepared public scenarios are complete, non-binding, and provider-free", (
     assert.equal(scenario.analysis.video_analysis.source, "prepared-synthetic");
     assert.match(scenario.receipt.reason, /No claim was submitted|does not deny a real claim/);
     assert.equal(scenario.pipeline_events.length, 7);
+    for (const event of scenario.pipeline_events) {
+      assert.equal(typeof preparedStepSubtitle(event.step, event), "string");
+    }
   }
   assert.deepEqual(
     preparedPipelineEvents.map(({ step }) => step),

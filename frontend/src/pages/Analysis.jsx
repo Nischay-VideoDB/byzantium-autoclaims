@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { streamClaim } from "../api";
+import { preparedStepSubtitle } from "../preparedDemo";
 
 const PIPELINE_STEPS = [
   { key: "nosana",    label: "Nosana GPU Compute",    icon: "⚡", desc: "Submitting video processing job to decentralized compute..." },
@@ -12,15 +13,7 @@ const PIPELINE_STEPS = [
 ];
 
 function StepRow({ step, state, result, prepared = false }) {
-  const preparedSubtitle = {
-    nosana: result?.clip_verdict ? `Prepared: ${result.clip_verdict.replace(/_/g, " ").toLowerCase()} · integrity ${result.integrity_score}/100` : null,
-    videodb: result ? `Prepared: ${result.collision ? `${result.severity} collision cue @ ${result.timestamp}` : "conflicting collision cues"}` : null,
-    terminal3: result ? `Prepared: ${result.verified ? "identity signal aligned" : "identity signal conflicted"} · ${result.identity_score}/100` : null,
-    myinfo: result ? `Prepared: ${result.verified ? "policy signal aligned" : "policy signal conflicted"} · ${result.vehicle_plate}` : null,
-    kimi: result ? `Prepared: ${result.decision.toLowerCase()} path selected` : null,
-    daytona: result ? `Prepared: ${result.hard_reject ? "stop-and-escalate control" : "review controls applied"}` : null,
-    byzantium: result ? `Prepared: score ${result.trust_score}/1000 · ${result.decision.toLowerCase()} path` : null,
-  }[step.key];
+  const preparedSubtitle = preparedStepSubtitle(step.key, result);
   const subtitle = prepared && result
     ? `${preparedSubtitle || "Prepared synthetic signal"} - no provider was contacted.`
     : {

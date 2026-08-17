@@ -99,6 +99,33 @@ export function getPreparedScenario(id) {
   return PREPARED_SCENARIOS.find((scenario) => scenario.id === id) || null;
 }
 
+export function preparedStepSubtitle(stepKey, result) {
+  if (!result) return null;
+
+  switch (stepKey) {
+    case "nosana":
+      return result.clip_verdict
+        ? `Prepared: ${result.clip_verdict.replace(/_/g, " ").toLowerCase()} · integrity ${result.integrity_score}/100`
+        : null;
+    case "videodb":
+      return `Prepared: ${result.collision ? `${result.severity} collision cue @ ${result.timestamp}` : "conflicting collision cues"}`;
+    case "terminal3":
+      return `Prepared: ${result.verified ? "identity signal aligned" : "identity signal conflicted"} · ${result.identity_score}/100`;
+    case "myinfo":
+      return `Prepared: ${result.verified ? "policy signal aligned" : "policy signal conflicted"} · ${result.vehicle_plate}`;
+    case "kimi":
+      return result.decision ? `Prepared: ${result.decision.toLowerCase()} path selected` : null;
+    case "daytona":
+      return `Prepared: ${result.hard_reject ? "stop-and-escalate control" : "review controls applied"}`;
+    case "byzantium":
+      return result.decision
+        ? `Prepared: score ${result.trust_score}/1000 · ${result.decision.toLowerCase()} path`
+        : null;
+    default:
+      return null;
+  }
+}
+
 export function isLoopbackHostname(hostname) {
   return ["localhost", "127.0.0.1", "::1", "[::1]"].includes(String(hostname).toLowerCase());
 }

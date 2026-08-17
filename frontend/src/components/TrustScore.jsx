@@ -1,4 +1,4 @@
-export default function TrustScore({ score, riskLevel }) {
+export default function TrustScore({ score, riskLevel, prepared = false }) {
   const pct = Math.min(100, (score / 1000) * 100);
 
   const color =
@@ -12,7 +12,7 @@ export default function TrustScore({ score, riskLevel }) {
     <div className={`bg-gray-900 border border-gray-800 rounded-2xl p-6 ring-2 ${color.ring}`}>
       <div className="flex items-end justify-between mb-3">
         <div>
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Trust Score</p>
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">{prepared ? "Prepared assessment score" : "Trust Score"}</p>
           <p className={`text-5xl font-black ${color.text}`}>{score}</p>
           <p className="text-gray-500 text-sm">/ 1000</p>
         </div>

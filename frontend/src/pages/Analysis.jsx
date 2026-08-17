@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { streamClaim } from "../api";
-import { preparedPipelineEvents } from "../preparedDemo";
 
 const PIPELINE_STEPS = [
   { key: "nosana",    label: "Nosana GPU Compute",    icon: "⚡", desc: "Submitting video processing job to decentralized compute..." },
@@ -13,8 +12,17 @@ const PIPELINE_STEPS = [
 ];
 
 function StepRow({ step, state, result, prepared = false }) {
+  const preparedSubtitle = {
+    nosana: result?.clip_verdict ? `Prepared: ${result.clip_verdict.replace(/_/g, " ").toLowerCase()} · integrity ${result.integrity_score}/100` : null,
+    videodb: result ? `Prepared: ${result.collision ? `${result.severity} collision cue @ ${result.timestamp}` : "conflicting collision cues"}` : null,
+    terminal3: result ? `Prepared: ${result.verified ? "identity signal aligned" : "identity signal conflicted"} · ${result.identity_score}/100` : null,
+    myinfo: result ? `Prepared: ${result.verified ? "policy signal aligned" : "policy signal conflicted"} · ${result.vehicle_plate}` : null,
+    kimi: result ? `Prepared: ${result.decision.toLowerCase()} path selected` : null,
+    daytona: result ? `Prepared: ${result.hard_reject ? "stop-and-escalate control" : "review controls applied"}` : null,
+    byzantium: result ? `Prepared: score ${result.trust_score}/1000 · ${result.decision.toLowerCase()} path` : null,
+  }[step.key];
   const subtitle = prepared && result
-    ? "Prepared synthetic signal - no provider was contacted."
+    ? `${preparedSubtitle || "Prepared synthetic signal"} - no provider was contacted.`
     : {
     nosana:    result ? (
       result.clip_verdict
@@ -66,7 +74,9 @@ function StepRow({ step, state, result, prepared = false }) {
       </div>
 
       {state === "running" && (
-        <span className="text-xs text-blue-400 animate-pulse flex-shrink-0">Live</span>
+        <span className="text-xs text-blue-400 animate-pulse flex-shrink-0">
+          {prepared ? "Prepared step" : "Live"}
+        </span>
       )}
     </div>
   );
@@ -105,23 +115,23 @@ export default function Analysis({ claimId, onAnalyzed, prepared = null }) {
       let cancelled = false;
       const timers = [];
 
-      preparedPipelineEvents.forEach((event, index) => {
+      prepared.pipeline_events.forEach((event, index) => {
         timers.push(setTimeout(() => {
           if (!cancelled) {
             setStepStates((previous) => ({ ...previous, [event.step]: "running" }));
           }
-        }, index * 420));
+        }, index * 260));
         timers.push(setTimeout(() => {
           if (!cancelled) {
             setStepStates((previous) => ({ ...previous, [event.step]: event.status }));
             setStepResults((previous) => ({ ...previous, [event.step]: event }));
           }
-        }, index * 420 + 260));
+        }, index * 260 + 180));
       });
 
       timers.push(setTimeout(() => {
         if (!cancelled) onAnalyzed(prepared.analysis);
-      }, preparedPipelineEvents.length * 420 + 380));
+      }, prepared.pipeline_events.length * 260 + 260));
 
       return () => {
         cancelled = true;
@@ -166,7 +176,7 @@ export default function Analysis({ claimId, onAnalyzed, prepared = null }) {
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-2xl font-bold text-white">{prepared ? "Prepared Evidence Walkthrough" : "Analyzing Claim"}</h2>
           <span className="text-xs font-mono text-gray-500 bg-gray-900 border border-gray-800 px-2.5 py-1 rounded">
-            {prepared ? "PREPARED" : claimId}
+            {prepared ? prepared.id : claimId}
           </span>
         </div>
         <p className="text-gray-400 text-sm">

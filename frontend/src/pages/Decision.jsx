@@ -184,8 +184,9 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
         <TrustScore
           score={trust_score_result.trust_score}
           riskLevel={trust_score_result.risk_level}
+          prepared={prepared}
         />
-        <DecisionBadge decision={trust_score_result.decision} size="lg" />
+        <DecisionBadge decision={trust_score_result.decision} size="lg" prepared={prepared} />
       </div>
 
       {/* Reason */}
@@ -229,18 +230,18 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
       {/* Payout simulation */}
       {trust_score_result.decision === "APPROVE" && (
         <div className="mt-4 bg-green-500/5 border border-green-500/20 rounded-xl p-5 text-center">
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Payout Authorized</p>
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">{prepared ? "Illustrative amount" : "Payout Authorized"}</p>
           <p className="text-4xl font-black text-green-400">
             💰 ${payout_amount.toLocaleString()}
           </p>
-          <p className="text-gray-500 text-xs mt-1">Simulated — no real funds transferred</p>
+          <p className="text-gray-500 text-xs mt-1">{prepared ? "Prepared example only - not an authorization, guarantee, or payment." : "Simulated — no real funds transferred"}</p>
         </div>
       )}
 
       {trust_score_result.decision === "REJECT" && (
         <div className="mt-4 bg-red-500/5 border border-red-500/20 rounded-xl p-5 text-center">
           <p className="text-4xl font-black text-red-400">💸 $0.00</p>
-          <p className="text-gray-500 text-xs mt-1">Claim does not meet approval criteria</p>
+          <p className="text-gray-500 text-xs mt-1">{prepared ? "Prepared escalation only - a licensed human reviewer would determine any real outcome." : "Claim does not meet approval criteria"}</p>
         </div>
       )}
 
@@ -257,7 +258,7 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
         onClick={onViewReceipt}
         className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all"
       >
-        View Liability Receipt →
+        {prepared ? "View Prepared Review Receipt →" : "View Liability Receipt →"}
       </button>
     </div>
   );

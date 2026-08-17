@@ -132,7 +132,9 @@ uvicorn main:app --reload --port 8001
 ```bash
 cd frontend
 npm install
-# Create frontend/.env with: VITE_API_URL=http://localhost:8001
+# Create frontend/.env with:
+# VITE_API_URL=http://localhost:8001
+# VITE_LIVE_OPERATOR=true
 npm run dev
 ```
 
@@ -155,6 +157,7 @@ Visit `http://localhost:5173`
 
 ```bash
 VITE_API_URL=http://localhost:8001
+VITE_LIVE_OPERATOR=true     # local loopback only; public hosts always use prepared mode
 DATABASE_URL=sqlite:///./byzantium_autoclaims.db
 UPLOAD_DIR=uploads
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000

@@ -131,7 +131,7 @@ export default function Receipt({ claimId, onReset, preparedReceipt = null }) {
         <div className="px-6 py-5 border-t border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs text-gray-500 uppercase tracking-widest">Decision</span>
-            <DecisionBadge decision={receipt.decision} size="sm" />
+            <DecisionBadge decision={receipt.decision} size="sm" prepared={Boolean(preparedReceipt)} />
           </div>
           <p className="text-sm text-gray-300 leading-relaxed">{receipt.reason}</p>
         </div>
@@ -147,17 +147,14 @@ export default function Receipt({ claimId, onReset, preparedReceipt = null }) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">
-                {receipt.decision === "APPROVE" ? "Authorized Payout" : "Payout"}
+                {preparedReceipt ? "Illustrative amount" : receipt.decision === "APPROVE" ? "Authorized Payout" : "Payout"}
               </p>
               <p className={`text-3xl font-black ${
                 receipt.decision === "APPROVE" ? "text-green-400" : "text-gray-500"
               }`}>
-                {receipt.decision === "APPROVE"
-                  ? `$${receipt.payout_amount.toLocaleString()}`
-                  : receipt.decision === "REVIEW"
-                  ? "Pending"
-                  : "$0.00"
-                }
+                {preparedReceipt
+                  ? receipt.decision === "APPROVE" ? `$${receipt.payout_amount.toLocaleString()}` : "Not assessed"
+                  : receipt.decision === "APPROVE" ? `$${receipt.payout_amount.toLocaleString()}` : receipt.decision === "REVIEW" ? "Pending" : "$0.00"}
               </p>
             </div>
             {receipt.decision === "APPROVE" && (
@@ -165,7 +162,7 @@ export default function Receipt({ claimId, onReset, preparedReceipt = null }) {
             )}
           </div>
           {receipt.decision !== "REVIEW" && (
-            <p className="text-xs text-gray-600 mt-2">Simulated payout — no real funds transferred</p>
+            <p className="text-xs text-gray-600 mt-2">{preparedReceipt ? "Prepared amount only - no authorization, guarantee, or funds transfer." : "Simulated payout — no real funds transferred"}</p>
           )}
         </div>
 
@@ -191,7 +188,7 @@ export default function Receipt({ claimId, onReset, preparedReceipt = null }) {
           onClick={onReset}
           className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all text-sm"
         >
-          {preparedReceipt ? "Restart prepared walkthrough" : "File Another Claim"}
+          {preparedReceipt ? "Choose another prepared example" : "File Another Claim"}
         </button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-export default function DecisionBadge({ decision, size = "lg" }) {
+export default function DecisionBadge({ decision, size = "lg", prepared = false }) {
   const cfg = {
     APPROVE: {
       bg: "bg-green-500/10",
@@ -27,6 +27,13 @@ export default function DecisionBadge({ decision, size = "lg" }) {
   };
 
   const c = cfg[decision] || cfg.REVIEW;
+  const label = prepared
+    ? {
+        APPROVE: "PREPARED APPROVE PATH",
+        REJECT: "PREPARED ESCALATION",
+        REVIEW: "PREPARED MANUAL REVIEW",
+      }[decision] || "PREPARED REVIEW"
+    : c.label;
 
   if (size === "lg") {
     return (
@@ -34,7 +41,7 @@ export default function DecisionBadge({ decision, size = "lg" }) {
         className={`${c.bg} border-2 ${c.border} ${c.glow} rounded-2xl p-8 text-center`}
       >
         <div className={`text-6xl font-black ${c.text} mb-2`}>{c.icon}</div>
-        <div className={`text-3xl font-black ${c.text} tracking-widest`}>{c.label}</div>
+        <div className={`text-3xl font-black ${c.text} tracking-widest`}>{label}</div>
       </div>
     );
   }
@@ -43,7 +50,7 @@ export default function DecisionBadge({ decision, size = "lg" }) {
     <span
       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold ${c.bg} border ${c.border} ${c.text}`}
     >
-      {c.icon} {c.label}
+      {c.icon} {label}
     </span>
   );
 }

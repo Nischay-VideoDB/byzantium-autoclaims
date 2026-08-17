@@ -25,7 +25,7 @@ from models import (
     KimiResult,
     TrustScoreResult,
 )
-from services.videodb_service import analyze_video
+from services.videodb_service import VideoEvidenceUnavailable, analyze_video
 from services.terminal3_service import verify_identity
 from services.myinfo_service import verify_myinfo, _should_trigger as myinfo_needed
 from services.kimi_service import evaluate_claim
@@ -38,8 +38,46 @@ from services.trustgrid_service import calculate_trust_score, calculate_payout
 # App setup
 # ---------------------------------------------------------------------------
 
-UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "uploads"))
-UPLOAD_DIR.mkdir(exist_ok=True)
+IS_VERCEL = bool(os.getenv("VERCEL"))
+
+
+def _is_public_demo() -> bool:
+    """Vercel hosts a prepared, synthetic-only showcase - never live claim intake."""
+    return IS_VERCEL or os.getenv("BYZANTIUM_DEMO_MODE", "").lower() in {"1", "true", "yes"}
+
+
+def _runtime_directory(variable: str, local_default: str, ephemeral_name: str) -> Path:
+    """Resolve writable storage without creating persistent paths during import."""
+    if IS_VERCEL:
+        return Path("/tmp") / "byzantium-autoclaims" / ephemeral_name
+    return Path(os.getenv(variable, local_default))
+
+
+def _upload_directory() -> Path:
+    path = _runtime_directory("UPLOAD_DIR", "uploads", "uploads")
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _policy_directory() -> Path:
+    path = _runtime_directory("POLICY_DIR", "policies", "policies")
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _require_private_claim_workflow() -> None:
+    if _is_public_demo():
+        raise HTTPException(
+            status_code=403,
+            detail="This public showcase accepts no uploads, policy records, or personal claim data.",
+        )
+
+
+def _require_final_video_evidence(video_result: VideoAnalysis) -> None:
+    if video_result.source == "videodb-mock":
+        raise VideoEvidenceUnavailable(
+            "Synthetic VideoDB evidence is a prepared-demo placeholder and cannot produce a final claim decision."
+        )
 
 
 def _cors_origins() -> list[str]:
@@ -66,8 +104,11 @@ app.add_middleware(
 async def startup():
     init_db()
     print("[Byzantium] Database initialized")
-    await auto_load_policies()
-    print("[Byzantium] Policy auto-load complete")
+    if _is_public_demo():
+        print("[Byzantium] Public synthetic showcase - policy auto-load disabled")
+    else:
+        await auto_load_policies()
+        print("[Byzantium] Policy auto-load complete")
 
 
 # ---------------------------------------------------------------------------
@@ -81,6 +122,7 @@ def health():
         "status": "ok",
         "service": "Byzantium AutoClaims",
         "env": os.getenv("APP_ENV", "development"),
+        "public_demo": _is_public_demo(),
         "integrations": {
             "videodb": bool(os.getenv("VIDEODB_API_KEY", "").strip()),
             "terminal3": bool(os.getenv("TERMINAL3_API_KEY", "").strip() and os.getenv("TERMINAL3_DID", "").strip()),
@@ -107,6 +149,7 @@ async def upload_video(
     policy_number: str = Form(default=""),
     db: Session = Depends(get_db),
 ):
+    _require_private_claim_workflow()
     claim_id = f"CLM-{uuid.uuid4().hex[:8].upper()}"
 
     # Auto-lookup policy from plate if no policy number given
@@ -122,7 +165,7 @@ async def upload_video(
     # Save uploaded video
     ext = Path(video.filename).suffix or ".mp4"
     video_filename = f"{claim_id}{ext}"
-    video_path = UPLOAD_DIR / video_filename
+    video_path = _upload_directory() / video_filename
 
     with open(video_path, "wb") as f:
         shutil.copyfileobj(video.file, f)
@@ -153,10 +196,6 @@ async def upload_video(
 # POST /upload-policy  — SenseNova: ingest custom insurance policy PDF
 # ---------------------------------------------------------------------------
 
-POLICY_DIR = Path("policies")
-POLICY_DIR.mkdir(exist_ok=True)
-
-
 @app.post("/upload-policy")
 async def upload_policy(policy: UploadFile = File(...)):
     """
@@ -164,6 +203,7 @@ async def upload_policy(policy: UploadFile = File(...)):
     SenseNova U1 extracts coverage terms, exclusions, and payout limits.
     The extracted policy replaces the hardcoded Byzantium policy for subsequent Kimi evaluations.
     """
+    _require_private_claim_workflow()
     if not policy.filename:
         raise HTTPException(status_code=400, detail="No file provided")
 
@@ -172,7 +212,7 @@ async def upload_policy(policy: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Unsupported file type. Use PDF, image, or Office format.")
 
     safe_name = f"policy-{uuid.uuid4().hex[:8]}{ext}"
-    policy_path = POLICY_DIR / safe_name
+    policy_path = _policy_directory() / safe_name
 
     with open(policy_path, "wb") as f:
         shutil.copyfileobj(policy.file, f)
@@ -204,6 +244,7 @@ async def lookup_policy_endpoint(name: str = "", plate: str = ""):
     Lookup a policy document by claimant name + vehicle plate.
     Returns matched policy details and name/plate verification result.
     """
+    _require_private_claim_workflow()
     if not plate:
         raise HTTPException(status_code=400, detail="Vehicle plate is required")
 
@@ -227,6 +268,7 @@ async def verify_identity_endpoint(
     claim_id: str,
     db: Session = Depends(get_db),
 ):
+    _require_private_claim_workflow()
     claim = _get_claim(db, claim_id)
     result = await verify_identity(
         claimant_name=claim.claimant_name or "",
@@ -247,6 +289,7 @@ async def analyze_claim(
     claim_id: str,
     db: Session = Depends(get_db),
 ):
+    _require_private_claim_workflow()
     claim = _get_claim(db, claim_id)
     claim.status = "analyzing"
     db.commit()
@@ -262,6 +305,7 @@ async def analyze_claim(
             video_path=claim.video_path or "",
             filename=claim.video_filename or "",
         )
+        _require_final_video_evidence(video_result)
         claim.video_analysis = video_result.model_dump()
         db.commit()
 
@@ -316,6 +360,13 @@ async def analyze_claim(
             status="complete",
         )
 
+    except VideoEvidenceUnavailable:
+        claim.status = "error"
+        db.commit()
+        raise HTTPException(
+            status_code=424,
+            detail="Video evidence could not be verified. No final claim decision was generated.",
+        )
     except Exception as exc:
         claim.status = "error"
         db.commit()
@@ -333,6 +384,8 @@ async def stream_claim(claim_id: str):
     Server-Sent Events endpoint. Streams each pipeline step as it completes
     so the frontend can update in real time rather than waiting for a single response.
     """
+
+    _require_private_claim_workflow()
 
     async def event_generator():
         from database import SessionLocal
@@ -373,6 +426,7 @@ async def stream_claim(claim_id: str):
             # 2. VideoDB
             yield emit("videodb", "running")
             video_result = await analyze_video(claim.video_path or "", claim.video_filename or "")
+            _require_final_video_evidence(video_result)
             claim.video_analysis = video_result.model_dump()
             db.commit()
             yield emit("videodb", "done", {
@@ -545,6 +599,10 @@ async def stream_claim(claim_id: str):
                 "status": "complete",
             })
 
+        except VideoEvidenceUnavailable:
+            claim.status = "error"
+            db.commit()
+            yield emit("error", "failed", {"message": "Video evidence could not be verified. No final claim decision was generated."})
         except Exception as exc:
             claim.status = "error"
             db.commit()
@@ -574,6 +632,8 @@ async def calculate_trust_endpoint(
     identity_result: IdentityResult,
     kimi_result: KimiResult,
 ):
+    _require_private_claim_workflow()
+    _require_final_video_evidence(video_analysis)
     daytona_result = await run_claim_agent(
         video_analysis=video_analysis.model_dump(),
         identity_result=identity_result.model_dump(),
@@ -588,6 +648,7 @@ async def calculate_trust_endpoint(
 
 @app.get("/decision/{claim_id}")
 def get_decision(claim_id: str, db: Session = Depends(get_db)):
+    _require_private_claim_workflow()
     claim = _get_claim(db, claim_id)
     if claim.status != "complete":
         raise HTTPException(status_code=202, detail=f"Claim status: {claim.status}")
@@ -611,6 +672,7 @@ def get_decision(claim_id: str, db: Session = Depends(get_db)):
 
 @app.get("/receipt/{claim_id}", response_model=ReceiptResponse)
 def get_receipt(claim_id: str, db: Session = Depends(get_db)):
+    _require_private_claim_workflow()
     claim = _get_claim(db, claim_id)
     if claim.status != "complete":
         raise HTTPException(status_code=404, detail="Receipt not available yet")
@@ -644,6 +706,8 @@ def get_receipt(claim_id: str, db: Session = Depends(get_db)):
 
 @app.get("/claims")
 def list_claims(db: Session = Depends(get_db)):
+    if _is_public_demo():
+        return []
     claims = db.query(ClaimRecord).order_by(ClaimRecord.created_at.desc()).limit(20).all()
     return [
         {

@@ -4,7 +4,19 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./byzantium_autoclaims.db")
+def normalize_database_url(url: str) -> str:
+    """Use SQLAlchemy's Psycopg 3 dialect for standard PostgreSQL URLs."""
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url.removeprefix("postgresql://")
+    return url
+
+
+_default_database_url = (
+    "sqlite:////tmp/byzantium-autoclaims.db"
+    if os.getenv("VERCEL")
+    else "sqlite:///./byzantium_autoclaims.db"
+)
+DATABASE_URL = normalize_database_url(os.getenv("DATABASE_URL", _default_database_url))
 
 engine = create_engine(
     DATABASE_URL,

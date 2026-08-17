@@ -167,6 +167,9 @@ export default function Upload({ onUploaded }) {
         <p className="text-gray-400 text-sm">
           Upload your dashcam footage and claimant details. Policy is verified automatically from your vehicle plate.
         </p>
+        <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
+          Demonstration only - use synthetic data. The public showcase does not accept uploads or retain personal claim details.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

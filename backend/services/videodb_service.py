@@ -1,7 +1,19 @@
 import os
 import re
 import random
+import logging
 from models import VideoAnalysis
+
+logger = logging.getLogger(__name__)
+
+
+class VideoEvidenceUnavailable(RuntimeError):
+    """Raised when verified VideoDB evidence is unavailable for a claim decision."""
+
+
+def _synthetic_evidence_enabled() -> bool:
+    """Allow mock output only for deliberately prepared local demonstrations."""
+    return os.getenv("BYZANTIUM_ALLOW_SYNTHETIC_EVIDENCE", "").lower() in {"1", "true", "yes"}
 
 # ── Mock fallbacks ─────────────────────────────────────────────────────────────
 
@@ -85,7 +97,9 @@ AUDIO_SEARCH_TERMS = [
 async def analyze_video(video_path: str, filename: str = "") -> VideoAnalysis:
     api_key = os.getenv("VIDEODB_API_KEY", "").strip()
     if not api_key:
-        return random.choice(MOCK_ANALYSES)
+        if _synthetic_evidence_enabled():
+            return random.choice(MOCK_ANALYSES)
+        raise VideoEvidenceUnavailable("VideoDB is not configured for verified evidence.")
 
     try:
         import videodb
@@ -197,8 +211,10 @@ async def analyze_video(video_path: str, filename: str = "") -> VideoAnalysis:
         )
 
     except Exception as exc:
-        print(f"[VideoDB] Error: {exc} — mock fallback")
-        return random.choice(MOCK_ANALYSES)
+        logger.exception("VideoDB evidence analysis failed")
+        if _synthetic_evidence_enabled():
+            return random.choice(MOCK_ANALYSES)
+        raise VideoEvidenceUnavailable("VideoDB evidence analysis failed.") from exc
 
 
 # ── Audio evidence extraction ──────────────────────────────────────────────────

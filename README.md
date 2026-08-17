@@ -57,7 +57,7 @@ When a claimant enters their **name + vehicle plate**, the backend:
 3. Returns a live verification banner — green if matched, red if mismatched
 4. Blocks submission if the policy exists but the claimant details don't match
 
-The demo policy `JaneSmith_SLD9775A_Policy.docx` covers:
+The bundled demo policy contains synthetic test data only:
 - **Name:** Jane Smith · **NRIC:** S9812381D · **Plate:** SLD9775A · **Policy:** BYZ-2024-SLD9775A-001
 
 ---
@@ -140,7 +140,7 @@ Visit `http://localhost:5173`
 
 ---
 
-## Demo Credentials
+## Synthetic Demo Credentials
 
 | Field | Value |
 |---|---|
@@ -182,6 +182,12 @@ application data. Before a production deployment, provide a managed PostgreSQL
 the local SQLite file and local upload directory are suitable only for local
 development. The current `claims` schema is defined by `backend/database.py` and
 must be migrated before attaching a production database.
+
+The Vercel deployment is deliberately a read-only synthetic showcase: it rejects
+uploads, policy lookups, claim listings, and final decisions. It writes only
+ephemeral request input under `/tmp` and never treats mock VideoDB output as
+verified evidence. A live claims product requires a separate reviewed deployment
+with managed storage, access controls, and compliance approval.
 
 ---
 

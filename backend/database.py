@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./trustgrid.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./byzantium_autoclaims.db")
 
 engine = create_engine(
     DATABASE_URL,

@@ -124,7 +124,7 @@ Hard exclusions (EXCL-01 to EXCL-08) trigger instant REJECT regardless of score.
 ```bash
 cd backend
 pip install -r requirements.txt
-# Copy .env.example to .env and fill in API keys
+# Copy the root .env.example values into backend/.env and fill in API keys
 uvicorn main:app --reload --port 8001
 ```
 
@@ -154,6 +154,10 @@ Visit `http://localhost:5173`
 ## Environment Variables
 
 ```bash
+VITE_API_URL=http://localhost:8001
+DATABASE_URL=sqlite:///./byzantium_autoclaims.db
+UPLOAD_DIR=uploads
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 VIDEODB_API_KEY=
 TERMINAL3_API_KEY=
 TERMINAL3_DID=
@@ -163,6 +167,21 @@ NOSANA_API_KEY=
 SENSENOVA_API_KEY=          # SN-PLACEHOLDER-024 triggers proxy extraction
 KIMI_API_KEY=               # optional — TokenRouter used as primary
 ```
+
+## Deployment preparation
+
+Deploy the Vite frontend and FastAPI backend as separate services unless the
+Vercel Services private beta is available to the project. Set `VITE_API_URL` to
+the API origin at frontend build time, and set the API's `CORS_ORIGINS` to the
+frontend origin. The backend entrypoint for a Vercel FastAPI project is
+`backend/app.py:app`.
+
+Claims, uploaded dashcam files, and uploaded policy documents are durable
+application data. Before a production deployment, provide a managed PostgreSQL
+`DATABASE_URL` and durable object storage mounted or wired through `UPLOAD_DIR`;
+the local SQLite file and local upload directory are suitable only for local
+development. The current `claims` schema is defined by `backend/database.py` and
+must be migrated before attaching a production database.
 
 ---
 

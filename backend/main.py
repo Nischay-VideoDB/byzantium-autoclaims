@@ -1,7 +1,4 @@
-"""
-TrustGrid AutoClaims — FastAPI backend
-Autonomous Insurance Claims Approval with Trust Validation
-"""
+"""Byzantium AutoClaims - FastAPI backend."""
 
 import os
 import uuid
@@ -41,18 +38,24 @@ from services.trustgrid_service import calculate_trust_score, calculate_payout
 # App setup
 # ---------------------------------------------------------------------------
 
-UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "uploads"))
 UPLOAD_DIR.mkdir(exist_ok=True)
 
+
+def _cors_origins() -> list[str]:
+    configured = os.getenv("CORS_ORIGINS", "")
+    origins = [origin.strip().rstrip("/") for origin in configured.split(",") if origin.strip()]
+    return origins or ["http://localhost:5173", "http://localhost:3000"]
+
 app = FastAPI(
-    title="TrustGrid AutoClaims API",
-    description="Autonomous Insurance Claims Approval with Trust Validation",
+    title="Byzantium AutoClaims API",
+    description="Autonomous insurance-claim decision support with a reviewable evidence trail.",
     version="1.0.0",
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=_cors_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
@@ -62,9 +65,9 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     init_db()
-    print("[TrustGrid] Database initialized")
+    print("[Byzantium] Database initialized")
     await auto_load_policies()
-    print("[TrustGrid] Policy auto-load complete")
+    print("[Byzantium] Policy auto-load complete")
 
 
 # ---------------------------------------------------------------------------
@@ -76,7 +79,7 @@ async def startup():
 def health():
     return {
         "status": "ok",
-        "service": "TrustGrid AutoClaims",
+        "service": "Byzantium AutoClaims",
         "env": os.getenv("APP_ENV", "development"),
         "integrations": {
             "videodb": bool(os.getenv("VIDEODB_API_KEY", "").strip()),

@@ -4,9 +4,11 @@ uvicorn[standard]
 python-dotenv
 pydantic
 python-multipart
+python-docx
 
 # Database
 sqlalchemy
+psycopg[binary]
 
 # AI / LLM
 anthropic

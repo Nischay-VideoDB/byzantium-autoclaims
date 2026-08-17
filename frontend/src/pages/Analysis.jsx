@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { streamClaim } from "../api";
+import { preparedPipelineEvents } from "../preparedDemo";
 
 const PIPELINE_STEPS = [
   { key: "nosana",    label: "Nosana GPU Compute",    icon: "⚡", desc: "Submitting video processing job to decentralized compute..." },
@@ -11,8 +12,10 @@ const PIPELINE_STEPS = [
   { key: "byzantium", label: "Byzantium Decision",     icon: "⚖️", desc: "Calculating final trust score and decision..." },
 ];
 
-function StepRow({ step, state, result }) {
-  const subtitle = {
+function StepRow({ step, state, result, prepared = false }) {
+  const subtitle = prepared && result
+    ? "Prepared synthetic signal - no provider was contacted."
+    : {
     nosana:    result ? (
       result.clip_verdict
         ? `${result.clip_verdict} · signal ${result.collision_signal_strength}/100 · integrity ${result.integrity_score}/100 · corroboration: ${result.corroboration}`
@@ -90,7 +93,7 @@ function CollisionClip({ clipUrl }) {
   );
 }
 
-export default function Analysis({ claimId, onAnalyzed }) {
+export default function Analysis({ claimId, onAnalyzed, prepared = null }) {
   const [stepStates, setStepStates] = useState({});
   const [stepResults, setStepResults] = useState({});
   const [clipUrl, setClipUrl] = useState("");
@@ -98,6 +101,34 @@ export default function Analysis({ claimId, onAnalyzed }) {
   const cleanupRef = useRef(null);
 
   useEffect(() => {
+    if (prepared) {
+      let cancelled = false;
+      const timers = [];
+
+      preparedPipelineEvents.forEach((event, index) => {
+        timers.push(setTimeout(() => {
+          if (!cancelled) {
+            setStepStates((previous) => ({ ...previous, [event.step]: "running" }));
+          }
+        }, index * 420));
+        timers.push(setTimeout(() => {
+          if (!cancelled) {
+            setStepStates((previous) => ({ ...previous, [event.step]: event.status }));
+            setStepResults((previous) => ({ ...previous, [event.step]: event }));
+          }
+        }, index * 420 + 260));
+      });
+
+      timers.push(setTimeout(() => {
+        if (!cancelled) onAnalyzed(prepared.analysis);
+      }, preparedPipelineEvents.length * 420 + 380));
+
+      return () => {
+        cancelled = true;
+        timers.forEach(clearTimeout);
+      };
+    }
+
     cleanupRef.current = streamClaim(
       claimId,
       // onStep
@@ -127,19 +158,21 @@ export default function Analysis({ claimId, onAnalyzed }) {
     );
 
     return () => cleanupRef.current?.();
-  }, [claimId]);
+  }, [claimId, onAnalyzed, prepared]);
 
   return (
     <div>
       <div className="mb-8">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-2xl font-bold text-white">Analyzing Claim</h2>
+          <h2 className="text-2xl font-bold text-white">{prepared ? "Prepared Evidence Walkthrough" : "Analyzing Claim"}</h2>
           <span className="text-xs font-mono text-gray-500 bg-gray-900 border border-gray-800 px-2.5 py-1 rounded">
-            {claimId}
+            {prepared ? "PREPARED" : claimId}
           </span>
         </div>
         <p className="text-gray-400 text-sm">
-          Live pipeline — each step updates as it completes.
+          {prepared
+            ? "Prepared synthetic stages - no video, identity, policy, or provider is contacted."
+            : "Live pipeline — each step updates as it completes."}
         </p>
       </div>
 
@@ -150,6 +183,7 @@ export default function Analysis({ claimId, onAnalyzed }) {
             step={step}
             state={stepStates[step.key] || "pending"}
             result={stepResults[step.key]}
+            prepared={Boolean(prepared)}
           />
         ))}
       </div>

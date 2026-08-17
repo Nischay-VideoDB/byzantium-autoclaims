@@ -36,7 +36,7 @@ function CrashFrame({ frameUrl, clipUrl, plateDetected }) {
   );
 }
 
-function EvidenceCard({ icon, title, value, verified }) {
+function EvidenceCard({ icon, title, value, verified, prepared = false }) {
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-2">
@@ -49,7 +49,7 @@ function EvidenceCard({ icon, title, value, verified }) {
               : "text-red-400 bg-red-500/10"
           }`}
         >
-          {verified ? "✓ Verified" : "✕ Failed"}
+          {prepared ? "Prepared" : verified ? "✓ Verified" : "✕ Failed"}
         </span>
       </div>
       <p className="text-gray-300 text-sm">{value}</p>
@@ -79,17 +79,17 @@ function ScoreBreakdown({ breakdown }) {
   );
 }
 
-function MyInfoCard({ myinfo }) {
+function MyInfoCard({ myinfo, prepared = false }) {
   if (!myinfo || !myinfo.verified) return null;
   return (
     <div className="bg-gray-900 border border-purple-500/20 rounded-xl p-4 mb-4">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-lg">🇸🇬</span>
-        <span className="text-xs text-gray-500 uppercase tracking-widest">SingPass MyInfo</span>
+        <span className="text-xs text-gray-500 uppercase tracking-widest">{prepared ? "Prepared Identity Signal" : "SingPass MyInfo"}</span>
         <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${
           myinfo.licence_suspended ? "text-red-400 bg-red-500/10" : "text-purple-400 bg-purple-500/10"
         }`}>
-          {myinfo.licence_suspended ? "✕ SUSPENDED" : "✓ Gov Verified"}
+          {prepared ? "Prepared sample" : myinfo.licence_suspended ? "✕ SUSPENDED" : "✓ Gov Verified"}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
@@ -116,7 +116,7 @@ function MyInfoCard({ myinfo }) {
   );
 }
 
-function NosanaCard({ nosana }) {
+function NosanaCard({ nosana, prepared = false }) {
   if (!nosana || !nosana.clip_verdict) return null;
   const verdictColor =
     nosana.clip_verdict === "COLLISION_CONFIRMED" ? "text-green-400 bg-green-500/10" :
@@ -130,9 +130,9 @@ function NosanaCard({ nosana }) {
     <div className="bg-gray-900 border border-orange-500/20 rounded-xl p-4 mb-4">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-lg">⚡</span>
-        <span className="text-xs text-gray-500 uppercase tracking-widest">Nosana GPU · CLIP-ViT-B/32</span>
+        <span className="text-xs text-gray-500 uppercase tracking-widest">{prepared ? "Prepared Compute Signal" : "Nosana GPU · CLIP-ViT-B/32"}</span>
         <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${verdictColor}`}>
-          {nosana.clip_verdict.replace(/_/g, " ")}
+          {prepared ? "Prepared sample" : nosana.clip_verdict.replace(/_/g, " ")}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
@@ -157,7 +157,7 @@ function NosanaCard({ nosana }) {
   );
 }
 
-export default function Decision({ data, onViewReceipt }) {
+export default function Decision({ data, onViewReceipt, prepared = false }) {
   if (!data) return null;
 
   const { video_analysis, identity_result, myinfo_result, nosana_analysis, kimi_result, trust_score_result, payout_amount } = data;
@@ -165,9 +165,11 @@ export default function Decision({ data, onViewReceipt }) {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-1">Claim Decision</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">{prepared ? "Prepared Review Outcome" : "Claim Decision"}</h2>
         <p className="text-gray-400 text-sm">
-          Byzantium has evaluated all evidence and made a final determination.
+          {prepared
+            ? "Synthetic signals are presented for product demonstration only. They are not verified evidence or a real-world claim decision."
+            : "Byzantium has evaluated all evidence and made a final determination."}
         </p>
       </div>
 
@@ -191,7 +193,7 @@ export default function Decision({ data, onViewReceipt }) {
         <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">AI Reasoning</p>
         <p className="text-gray-300 text-sm leading-relaxed">{trust_score_result.reason}</p>
         <div className="mt-3 pt-3 border-t border-gray-800 flex items-center gap-2">
-          <span className="text-xs text-gray-500">Kimi AI:</span>
+          <span className="text-xs text-gray-500">{prepared ? "Prepared reasoning:" : "Kimi AI:"}</span>
           <span className="text-xs text-gray-400 italic">
             "{kimi_result.reason}"
           </span>
@@ -205,20 +207,22 @@ export default function Decision({ data, onViewReceipt }) {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <EvidenceCard
           icon="🎬"
-          title="Video Evidence"
+          title={prepared ? "Prepared Video Signal" : "Video Evidence"}
           value={video_analysis.collision ? `${video_analysis.severity.toUpperCase()} collision — ${video_analysis.fault?.replace(/_/g, " ")}` : "No collision detected"}
           verified={video_analysis.collision}
+          prepared={prepared}
         />
         <EvidenceCard
           icon="🛡️"
-          title="Identity"
+          title={prepared ? "Prepared Identity Signal" : "Identity"}
           value={`Score: ${identity_result.identity_score}/100 via ${identity_result.source}`}
           verified={identity_result.verified}
+          prepared={prepared}
         />
       </div>
 
-      <NosanaCard nosana={nosana_analysis} />
-      <MyInfoCard myinfo={myinfo_result} />
+      <NosanaCard nosana={nosana_analysis} prepared={prepared} />
+      <MyInfoCard myinfo={myinfo_result} prepared={prepared} />
 
       <ScoreBreakdown breakdown={trust_score_result.breakdown} />
 
@@ -243,7 +247,9 @@ export default function Decision({ data, onViewReceipt }) {
       {trust_score_result.decision === "REVIEW" && (
         <div className="mt-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-5 text-center">
           <p className="text-yellow-400 font-bold">⏳ Pending Manual Review</p>
-          <p className="text-gray-500 text-xs mt-1">A claims agent will review this within 24 hours</p>
+          <p className="text-gray-500 text-xs mt-1">
+            {prepared ? "Prepared outcome only - no claim has been submitted or assigned." : "A claims agent will review this within 24 hours"}
+          </p>
         </div>
       )}
 

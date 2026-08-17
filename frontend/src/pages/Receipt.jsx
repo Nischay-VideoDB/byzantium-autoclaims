@@ -11,15 +11,20 @@ function ReceiptRow({ label, value, highlight }) {
   );
 }
 
-export default function Receipt({ claimId, onReset }) {
+export default function Receipt({ claimId, onReset, preparedReceipt = null }) {
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (preparedReceipt) {
+      setReceipt(preparedReceipt);
+      return;
+    }
+
     getReceipt(claimId)
       .then(setReceipt)
       .catch((err) => setError(err.message));
-  }, [claimId]);
+  }, [claimId, preparedReceipt]);
 
   if (error) {
     return (
@@ -53,9 +58,11 @@ export default function Receipt({ claimId, onReset }) {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-1">Liability Receipt</h2>
+        <h2 className="text-2xl font-bold text-white mb-1">{preparedReceipt ? "Prepared Audit Receipt" : "Liability Receipt"}</h2>
         <p className="text-gray-400 text-sm">
-          Official record of the Byzantium claims decision.
+          {preparedReceipt
+            ? "A non-binding synthetic audit record for the public product walkthrough."
+            : "Official record of the Byzantium claims decision."}
         </p>
       </div>
 
@@ -99,7 +106,7 @@ export default function Receipt({ claimId, onReset }) {
               <p className="text-xs text-gray-500">Autonomous Insurance Claims System</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-500 mb-0.5">Receipt</p>
+              <p className="text-xs text-gray-500 mb-0.5">{preparedReceipt ? "Prepared record" : "Receipt"}</p>
               <p className="font-mono font-bold text-white text-sm">{receipt.receipt_number}</p>
             </div>
           </div>
@@ -165,8 +172,9 @@ export default function Receipt({ claimId, onReset }) {
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-800 bg-gray-900/30">
           <p className="text-xs text-gray-600 text-center">
-            This receipt was generated automatically by Byzantium AutoClaims.
-            Powered by VideoDB · Terminal 3 · Kimi AI · Daytona · Nosana.
+            {preparedReceipt
+              ? "Prepared synthetic walkthrough - not a claim, policy record, evidence verification, or payout authorization."
+              : "This receipt was generated automatically by Byzantium AutoClaims. Powered by VideoDB · Terminal 3 · Kimi AI · Daytona · Nosana."}
           </p>
         </div>
       </div>
@@ -183,7 +191,7 @@ export default function Receipt({ claimId, onReset }) {
           onClick={onReset}
           className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all text-sm"
         >
-          File Another Claim
+          {preparedReceipt ? "Restart prepared walkthrough" : "File Another Claim"}
         </button>
       </div>
     </div>

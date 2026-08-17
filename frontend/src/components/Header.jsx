@@ -1,4 +1,4 @@
-export default function Header() {
+export default function Header({ prepared = false }) {
   return (
     <header className="border-b border-gray-800 mb-8">
       <div className="max-w-3xl mx-auto px-4 py-5 flex items-center gap-3">
@@ -7,11 +7,13 @@ export default function Header() {
         </div>
         <div>
           <h1 className="text-lg font-bold text-white leading-none">Byzantium AutoClaims</h1>
-          <p className="text-xs text-gray-400 mt-0.5">Autonomous Insurance Claims Approval with Trust Validation</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {prepared ? "Prepared synthetic claims-review walkthrough" : "Autonomous Insurance Claims Approval with Trust Validation"}
+          </p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-          <span className="text-xs text-gray-400">Live</span>
+          <span className={`w-2 h-2 rounded-full ${prepared ? "bg-amber-400" : "bg-green-400 animate-pulse"}`}></span>
+          <span className="text-xs text-gray-400">{prepared ? "Prepared" : "Live"}</span>
         </div>
       </div>
     </header>

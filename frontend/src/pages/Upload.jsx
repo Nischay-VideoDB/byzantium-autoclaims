@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { uploadClaim, lookupPolicy } from "../api";
 
-export default function Upload({ onUploaded }) {
+export default function Upload({ onUploaded, onStartPreparedDemo, publicShowcase = false }) {
   const [file, setFile] = useState(null);
   const [form, setForm] = useState({
     claimantName: "",
@@ -159,6 +159,48 @@ export default function Upload({ onUploaded }) {
       </div>
     );
   };
+
+  if (publicShowcase) {
+    return (
+      <div>
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-1">Prepared Claims Review</h2>
+          <p className="text-gray-400 text-sm">
+            Explore a complete synthetic claim walkthrough with evidence, staged review signals, and a non-binding audit receipt.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
+          <p className="text-xs font-semibold uppercase tracking-widest text-amber-300">Public showcase</p>
+          <h3 className="mt-2 text-xl font-bold text-white">Rear-end collision review</h3>
+          <p className="mt-2 text-sm leading-relaxed text-gray-300">
+            This one-click journey uses prepared synthetic evidence only. It does not request uploads, names, IDs, policy details, provider keys, or create a real claim.
+          </p>
+          <button
+            type="button"
+            onClick={onStartPreparedDemo}
+            className="mt-5 w-full rounded-xl bg-blue-600 py-3.5 font-bold text-white transition-all hover:bg-blue-500"
+          >
+            Explore the prepared claim journey →
+          </button>
+          <p className="mt-3 text-xs text-amber-200/80">
+            Outcome: human review required. No coverage, liability, or payout decision is made.
+          </p>
+        </div>
+
+        <div className="mt-8 border-t border-gray-800 pt-6">
+          <p className="text-xs text-gray-600 text-center mb-3">Prepared workflow signals</p>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            {["Video evidence", "Identity signal", "Policy reasoning", "Audit receipt"].map((signal) => (
+              <span key={signal} className="text-xs text-gray-500 font-medium bg-gray-900 border border-gray-800 px-2.5 py-1 rounded">
+                {signal}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

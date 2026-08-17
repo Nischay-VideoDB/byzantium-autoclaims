@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 
 import {
   PREPARED_CLAIM_ID,
@@ -32,4 +33,18 @@ test("Vercel hosts use the prepared journey while local operators retain live mo
   assert.equal(isPreparedShowcase(), false);
 
   globalThis.window = originalWindow;
+});
+
+test("the public build includes the branded favicon and default favicon route", async () => {
+  const [indexHtml, favicon, vercelConfig] = await Promise.all([
+    readFile(new URL("../index.html", import.meta.url), "utf8"),
+    readFile(new URL("../public/favicon.svg", import.meta.url), "utf8"),
+    readFile(new URL("../vercel.json", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(indexHtml, /rel="icon" type="image\/svg\+xml" href="\/favicon\.svg"/);
+  assert.match(favicon, /<title id="title">Byzantium AutoClaims<\/title>/);
+  assert.deepEqual(JSON.parse(vercelConfig).rewrites, [
+    { source: "/favicon.ico", destination: "/favicon.svg" },
+  ]);
 });

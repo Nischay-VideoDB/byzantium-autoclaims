@@ -3,12 +3,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-
-def normalize_database_url(url: str) -> str:
-    """Use SQLAlchemy's Psycopg 3 dialect for standard PostgreSQL URLs."""
-    if url.startswith("postgresql://"):
-        return "postgresql+psycopg://" + url.removeprefix("postgresql://")
-    return url
+from database_url import normalize_database_url
 
 
 _default_database_url = (

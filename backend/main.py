@@ -151,6 +151,7 @@ def health():
             "tokenrouter": bool(os.getenv("TOKENROUTER_API_KEY", "").strip()),
             "daytona": bool(os.getenv("DAYTONA_API_KEY", "").strip()),
             "nosana": bool(os.getenv("NOSANA_API_KEY", "").strip()),
+            "myinfo": bool(os.getenv("MYINFO_CLIENT_ID", "").strip()),
             "openrouter": bool(os.getenv("OPEN_ROUTER_API_KEY", "").strip()),
             "durable_database": DATABASE_URL.startswith("postgresql"),
             "blob": bool(os.getenv("BLOB_READ_WRITE_TOKEN", "").strip()),
@@ -515,7 +516,7 @@ async def stream_claim(claim_id: str):
                 "source": identity_result.source,
             })
 
-            # 4. MyInfo — government verification (triggered by video gaps)
+            # 4. Published synthetic profile adapter (live MyInfo is optional)
             myinfo_result = None
             needs_myinfo = myinfo_needed(video_result.model_dump())
             if needs_myinfo or claim.nric:
@@ -540,6 +541,9 @@ async def stream_claim(claim_id: str):
                     "vehicle_ownership_confirmed": myinfo_result.vehicle_ownership_confirmed,
                     "myinfo_score": myinfo_result.myinfo_score,
                     "triggered_by": myinfo_result.triggered_by,
+                    "source": myinfo_result.source,
+                    "provider_available": myinfo_result.provider_available,
+                    "synthetic": myinfo_result.synthetic,
                 })
             else:
                 yield emit("myinfo", "skipped", {"reason": "video evidence sufficient, no NRIC provided"})

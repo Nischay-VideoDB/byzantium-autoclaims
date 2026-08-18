@@ -327,7 +327,7 @@ export default function Upload({ onUploaded, onStartPreparedDemo, publicShowcase
             <label className="block text-xs text-gray-400 mb-1.5">
               NRIC / SingPass ID
               <span className="ml-2 text-gray-600 font-normal normal-case tracking-normal">
-                — optional, triggers government identity verification
+                — optional, matches the published synthetic persona fixture; no live government lookup
               </span>
             </label>
             <input

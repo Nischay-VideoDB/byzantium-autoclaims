@@ -1,16 +1,15 @@
 """
-MyInfo Connector — SingPass Government Identity + Vehicle Verification
-Proxy sandbox data matching the myinfo-connector-nodejs schema.
+MyInfo adapter boundary for the synthetic public demo persona.
 
 Real flow (production):
   1. User authenticates via SingPass OAuth
   2. connector.getMyInfoPersonData(authCode, state, txnNo)
   3. Returns decrypted, signature-validated person data
 
-Hackathon proxy:
-  - NRIC maps to a realistic sandbox record
-  - Same field structure as real MyInfo API responses
-  - Triggers when video cannot confirm plate / hit-and-run / manual check needed
+Public deployment:
+  - NRIC maps only to a published synthetic fixture
+  - No government system is queried unless an operator separately configures it
+  - The result contract always exposes provider availability and synthetic provenance
 """
 
 import os
@@ -18,8 +17,7 @@ import httpx
 from models import MyInfoResult
 
 # ---------------------------------------------------------------------------
-# Proxy sandbox records — realistic Singapore data
-# Each NRIC maps to a specific scenario for demo purposes
+# Published synthetic records. These are fixtures, not government data.
 # ---------------------------------------------------------------------------
 
 PROXY_RECORDS = {
@@ -186,8 +184,8 @@ async def verify_myinfo(
     video_analysis: dict,
 ) -> "MyInfoResult":
     """
-    Verify claimant via MyInfo.
-    Tries real SingPass sandbox API first; falls back to proxy records.
+    Resolve the published synthetic profile adapter. If an operator has
+    configured a supported sandbox client, that result is labeled separately.
     """
     nric = (nric or "").strip().upper()
     if not nric:
@@ -205,6 +203,8 @@ async def verify_myinfo(
             vehicle_ownership_confirmed=False,
             myinfo_score=0,
             source="myinfo-skipped",
+            provider_available=bool(os.getenv("MYINFO_CLIENT_ID", "").strip()),
+            synthetic=False,
             triggered_by=_trigger_reason(video_analysis),
             raw={},
         )
@@ -217,7 +217,7 @@ async def verify_myinfo(
             if result:
                 return result
         except Exception as exc:
-            print(f"[MyInfo] Sandbox API error: {exc} — using proxy record")
+            print(f"[MyInfo] Sandbox API error: {exc} — using the published synthetic fixture")
 
     # Proxy record lookup
     return _parse_record(nric, claimant_name, video_analysis)
@@ -253,11 +253,14 @@ def _parse_record(nric: str, claimant_name: str, video_analysis: dict) -> "MyInf
         raw = copy.deepcopy(DEFAULT_RECORD_TEMPLATE)
         raw["uinfin"] = {"value": nric}
         raw["name"]["value"] = claimant_name or "UNKNOWN"
-        print(f"[MyInfo] Unknown NRIC {nric} — using default proxy record")
+        print(f"[MyInfo] Unknown NRIC {nric} — using a generated synthetic fixture")
     else:
-        print(f"[MyInfo] Proxy record found for {nric}")
+        print(f"[MyInfo] Published synthetic fixture found for {nric}")
 
-    return _build_result_from_raw(nric, raw, source="myinfo-proxy", video_analysis=video_analysis)
+    return _build_result_from_raw(
+        nric, raw, source="published-synthetic-myinfo-adapter",
+        video_analysis=video_analysis,
+    )
 
 
 def _build_result_from_raw(nric: str, raw: dict, source: str, video_analysis: dict = None) -> "MyInfoResult":
@@ -296,6 +299,7 @@ def _build_result_from_raw(nric: str, raw: dict, source: str, video_analysis: di
     if not vehicles:           myinfo_score -= 20
     myinfo_score = max(0, myinfo_score)
 
+    synthetic = source == "published-synthetic-myinfo-adapter"
     return MyInfoResult(
         verified=bool(name),
         nric=nric,
@@ -310,8 +314,13 @@ def _build_result_from_raw(nric: str, raw: dict, source: str, video_analysis: di
         vehicle_ownership_confirmed=vehicle_ownership_confirmed,
         myinfo_score=myinfo_score,
         source=source,
+        provider_available=not synthetic,
+        synthetic=synthetic,
         triggered_by=_trigger_reason(video_analysis),
-        raw=raw,
+        raw=(
+            {"published_synthetic_fixture": True, "fixture_id": "jane-smith-demo"}
+            if synthetic else raw
+        ),
     )
 
 

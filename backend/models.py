@@ -65,7 +65,9 @@ class MyInfoResult(BaseModel):
     licence_suspended: bool
     vehicle_ownership_confirmed: bool
     myinfo_score: int           # 0-100
-    source: str = "myinfo-proxy"
+    source: str = "published-synthetic-myinfo-adapter"
+    provider_available: bool = False
+    synthetic: bool = True
     triggered_by: str = ""
     raw: dict = {}
 

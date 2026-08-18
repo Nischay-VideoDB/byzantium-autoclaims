@@ -36,7 +36,7 @@ function CrashFrame({ frameUrl, clipUrl, plateDetected }) {
   );
 }
 
-function EvidenceCard({ icon, title, value, verified, prepared = false }) {
+function EvidenceCard({ icon, title, value, verified, prepared = false, statusLabel = "" }) {
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-2">
@@ -49,7 +49,7 @@ function EvidenceCard({ icon, title, value, verified, prepared = false }) {
               : "text-red-400 bg-red-500/10"
           }`}
         >
-          {prepared ? "Prepared" : verified ? "✓ Verified" : "✕ Failed"}
+          {statusLabel || (prepared ? "Prepared" : verified ? "✓ Verified" : "✕ Failed")}
         </span>
       </div>
       <p className="text-gray-300 text-sm">{value}</p>
@@ -81,15 +81,16 @@ function ScoreBreakdown({ breakdown }) {
 
 function MyInfoCard({ myinfo, prepared = false }) {
   if (!myinfo || !myinfo.verified) return null;
+  const synthetic = prepared || myinfo.synthetic || myinfo.source === "published-synthetic-myinfo-adapter";
   return (
     <div className="bg-gray-900 border border-purple-500/20 rounded-xl p-4 mb-4">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-lg">🇸🇬</span>
-        <span className="text-xs text-gray-500 uppercase tracking-widest">{prepared ? "Prepared Identity Signal" : "SingPass MyInfo"}</span>
+        <span className="text-xs text-gray-500 uppercase tracking-widest">{synthetic ? "Published Synthetic Profile" : "MyInfo Sandbox"}</span>
         <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${
           myinfo.licence_suspended ? "text-red-400 bg-red-500/10" : "text-purple-400 bg-purple-500/10"
         }`}>
-          {prepared ? "Prepared sample" : myinfo.licence_suspended ? "✕ SUSPENDED" : "✓ Gov Verified"}
+          {synthetic ? "Synthetic match" : myinfo.licence_suspended ? "✕ SUSPENDED" : "Sandbox verified"}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
@@ -109,14 +110,31 @@ function MyInfoCard({ myinfo, prepared = false }) {
         <span className={myinfo.demerit_points >= 12 ? "text-red-400" : myinfo.demerit_points >= 6 ? "text-yellow-400" : "text-gray-300"}>
           {myinfo.demerit_points}/24
         </span>
-        <span className="text-gray-500">MyInfo score</span>
+        <span className="text-gray-500">{synthetic ? "Synthetic profile score" : "MyInfo score"}</span>
         <span className="text-purple-300 font-bold">{myinfo.myinfo_score}/100</span>
       </div>
+      {synthetic && (
+        <p className="mt-3 pt-3 border-t border-gray-800 text-xs text-amber-300">
+          Live MyInfo provider unavailable. These are published synthetic fixture fields; no government system was queried.
+        </p>
+      )}
     </div>
   );
 }
 
 function NosanaCard({ nosana, prepared = false }) {
+  if (nosana?.source === "provider-unavailable") {
+    return (
+      <div className="bg-gray-900 border border-amber-500/20 rounded-xl p-4 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">⚡</span>
+          <span className="text-xs text-gray-500 uppercase tracking-widest">Nosana GPU</span>
+          <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full text-amber-300 bg-amber-500/10">Provider unavailable</span>
+        </div>
+        <p className="text-xs text-gray-400 mt-3">No Nosana result was simulated or used. The live decision retains the actual VideoDB and OpenRouter stages.</p>
+      </div>
+    );
+  }
   if (!nosana || !nosana.clip_verdict) return null;
   const verdictColor =
     nosana.clip_verdict === "COLLISION_CONFIRMED" ? "text-green-400 bg-green-500/10" :
@@ -209,22 +227,24 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <EvidenceCard
           icon="🎬"
-          title={demo ? "Demo Video Signal" : "Video Evidence"}
+          title={prepared ? "Prepared Video Signal" : "VideoDB Evidence"}
           value={video_analysis.collision ? `${video_analysis.severity.toUpperCase()} collision — ${video_analysis.fault?.replace(/_/g, " ")}` : "No collision detected"}
           verified={video_analysis.collision}
-          prepared={demo}
+          prepared={prepared}
+          statusLabel={!prepared && video_analysis.source === "videodb" ? "VideoDB analyzed" : ""}
         />
         <EvidenceCard
           icon="🛡️"
-          title={demo ? "Synthetic Identity Signal" : "Identity"}
+          title={prepared ? "Prepared Identity Signal" : identity_result.source === "published-synthetic-identity-adapter" ? "Published Synthetic Identity" : "Identity"}
           value={`Score: ${identity_result.identity_score}/100 via ${identity_result.source}`}
           verified={identity_result.verified}
-          prepared={demo}
+          prepared={prepared}
+          statusLabel={!prepared && identity_result.source === "published-synthetic-identity-adapter" ? "Synthetic match" : ""}
         />
       </div>
 
-      <NosanaCard nosana={nosana_analysis} prepared={demo} />
-      <MyInfoCard myinfo={myinfo_result} prepared={demo} />
+      <NosanaCard nosana={nosana_analysis} prepared={prepared} />
+      <MyInfoCard myinfo={myinfo_result} prepared={prepared} />
 
       <ScoreBreakdown breakdown={trust_score_result.breakdown} />
 

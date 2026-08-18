@@ -6,7 +6,7 @@ const PIPELINE_STEPS = [
   { key: "nosana",    label: "Nosana GPU Compute",    icon: "⚡", desc: "Submitting video processing job to decentralized compute..." },
   { key: "videodb",   label: "VideoDB Analysis",       icon: "🎬", desc: "Indexing scenes and spoken words from dashcam footage..." },
   { key: "terminal3", label: "Terminal 3 Identity",    icon: "🛡️", desc: "Verifying claimant identity via TEE attestation..." },
-  { key: "myinfo",    label: "SingPass MyInfo",        icon: "🇸🇬", desc: "Fetching government-verified vehicle & licence data..." },
+  { key: "myinfo",    label: "Synthetic Profile Adapter", icon: "🧪", desc: "Matching the published synthetic vehicle and licence fixture; live MyInfo is unavailable..." },
   { key: "kimi",      label: "Kimi AI Evaluation",     icon: "🤖", desc: "Cross-referencing evidence against policy document..." },
   { key: "daytona",   label: "Daytona ClaimAgent",     icon: "🔒", desc: "Enforcing hard policy rules in secure sandbox..." },
   { key: "byzantium", label: "Byzantium Decision",     icon: "⚖️", desc: "Calculating final trust score and decision..." },
@@ -25,7 +25,7 @@ function StepRow({ step, state, result, prepared = false }) {
     videodb:   result ? `${result.collision ? `${result.severity?.toUpperCase()} collision @ ${result.timestamp}` : "No collision detected"}` : step.desc,
     terminal3: result ? `${result.verified ? "✓ Verified" : "✗ Failed"} — T3 score: ${result.identity_score}/100` : step.desc,
     myinfo:    state === "skipped" ? `Skipped — ${result?.reason || "video evidence sufficient"}` :
-               result ? `${result.verified ? `✓ ${result.full_name} · ${result.vehicle_plate}` : "✗ NRIC not matched"} · ${result.demerit_points} demerit pts${result.licence_suspended ? " · SUSPENDED" : ""}` : step.desc,
+               result ? `${result.synthetic ? "Published synthetic fixture" : result.source} · live provider ${result.provider_available ? "available" : "unavailable"} · ${result.full_name} · ${result.vehicle_plate}` : step.desc,
     kimi:      result ? `${result.decision} — ${result.reason?.slice(0, 70)}...` : step.desc,
     daytona:   result ? `ClaimAgent executed${result.hard_reject ? " — hard reject triggered" : " — scoring applied"}` : step.desc,
     byzantium: result ? `Trust score: ${result.trust_score}/1000 — ${result.decision}` : step.desc,

@@ -1,8 +1,8 @@
 # Byzantium AutoClaims
 
-> AI-powered motor insurance claims — from dashcam to decision in seconds.
+> Non-binding synthetic motor-claim demonstrations — from dashcam evidence to an explainable demo outcome.
 
-Byzantium AutoClaims is a multi-agent system that ingests dashcam footage, verifies the claimant's identity and vehicle against government records, cross-checks the insurance policy, detects fraud, and issues an autonomous APPROVE / REVIEW / REJECT decision with a payout figure — all streamed in real time.
+Byzantium AutoClaims preserves the hackathon's multi-agent workflow while constraining the public deployment to one published synthetic persona. It ingests real submitted demo footage with VideoDB, evaluates the synthetic policy context with OpenRouter, and streams a non-binding APPROVE / REVIEW / REJECT demonstration. No government identity system, insurer, claim, coverage finding, or payout authorization is represented as live.
 
 ---
 
@@ -21,14 +21,14 @@ Byzantium AutoClaims is a multi-agent system that ingests dashcam footage, verif
 ```
 Upload
   │
-  ├─ 1. Nosana GPU        — CLIP-based video analysis, collision signal strength, integrity score
+  ├─ 1. Nosana GPU        — optional; explicitly unavailable when no provider key is configured
   ├─ 2. VideoDB           — scene indexing, crash frame extraction, plate detection, audio evidence
-  ├─ 3. Terminal 3        — TEE-attested identity verification (DID)
-  ├─ 4. SingPass MyInfo   — government vehicle registration + driving licence check
-  ├─ 4b. Plate Cross-check— VideoDB-detected plate vs MyInfo registered plate (EXCL-04 on mismatch)
+  ├─ 3. Identity adapter  — published synthetic persona match; Terminal 3 is optional/unavailable
+  ├─ 4. Profile adapter   — published synthetic vehicle/licence fixture; live MyInfo is unavailable
+  ├─ 4b. Plate Cross-check— VideoDB-detected plate vs synthetic registered plate
   ├─ 5. Fraud Detection   — duplicate claims (30d / 24h), vehicle fingerprint (via Daytona)
-  ├─ 6. Kimi AI           — policy-aware reasoning over all evidence (via TokenRouter)
-  ├─ 7. Daytona           — sandboxed ClaimAgent execution, hard exclusion enforcement
+  ├─ 6. OpenRouter        — live policy-aware reasoning over the evidence
+  ├─ 7. Policy engine     — bounded local hard-exclusion enforcement; Daytona is optional/unavailable
   └─ 8. Byzantium Score   — trust score 0–1000 → APPROVE / REVIEW / REJECT + payout
 ```
 
@@ -39,13 +39,10 @@ Upload
 | Sponsor | Role |
 |---|---|
 | **VideoDB** | Dashcam video ingestion, shot-based scene indexing, crash frame thumbnail, spoken-word indexing |
-| **Terminal 3** | TEE-based identity attestation; DID: `did:t3n:16d34b1887e89257702b597ef585298db72cad82` |
-| **Kimi AI (k2)** | Multi-factor claims reasoning against policy terms and evidence |
-| **TokenRouter** | Unified LLM routing with caching; fallback chain for Kimi → Anthropic |
-| **Daytona** | Sandboxed Python execution of ClaimAgent; fraud cross-checks against claim DB |
-| **Nosana** | Decentralised GPU compute; CLIP-equivalent video corroboration, integrity scoring |
-| **SenseNova U1** | Multimodal policy document ingestion (.docx → structured coverage terms) |
-| **SingPass MyInfo** | Government identity proxy: vehicle ownership, licence validity, demerit points |
+| **OpenRouter** | Live multi-factor synthetic-claim reasoning against policy terms and VideoDB evidence |
+| **Azure PostgreSQL** | Durable claim/run state, decisions, idempotency, and per-requester rate bounds |
+| **Vercel Blob** | Durable public storage for the uploaded synthetic demo footage |
+| **Optional providers** | Terminal 3, Daytona, Nosana, SenseNova and MyInfo are labeled unavailable when their credentials are absent; published synthetic adapters are never presented as live provider output |
 
 ---
 
@@ -78,10 +75,10 @@ Hard exclusions (EXCL-01 to EXCL-08) trigger instant REJECT regardless of score.
 
 | Layer | Technology |
 |---|---|
-| Backend | Python 3.11 · FastAPI · SQLAlchemy · SQLite |
+| Backend | Python 3.12 · FastAPI · SQLAlchemy · Azure PostgreSQL |
 | Frontend | React 18 · Vite · TailwindCSS |
 | Streaming | Server-Sent Events (SSE) |
-| AI Models | `claude-sonnet-4-6` (default) · `kimi-k2` · `claude-haiku-4-5` |
+| AI Models | OpenRouter model selected by `OPENROUTER_MODEL` |
 
 ---
 

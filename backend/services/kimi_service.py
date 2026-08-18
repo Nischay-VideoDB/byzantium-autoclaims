@@ -58,7 +58,7 @@ IDENTITY VERIFICATION (Terminal 3 TEE attestation):
 - Verified: {identity.verified}
 - Identity score: {identity.identity_score}/100
 
-MYINFO GOVERNMENT VERIFICATION (SingPass):
+PROFILE ADAPTER (synthetic public fixture unless provider_available=true):
 {_myinfo_block(myinfo)}
 
 FRAUD DETECTION (Daytona cross-claim analysis):
@@ -66,13 +66,13 @@ FRAUD DETECTION (Daytona cross-claim analysis):
 
 === YOUR TASK ===
 1. Consider camera POV — first-person means camera car IS the claimant's vehicle.
-2. Use visual, audio, Nosana GPU corroboration, AND MyInfo government data.
+2. Use visual and audio evidence. Treat unavailable providers as unavailable; a published synthetic profile is demo context, not government verification.
 3. Check every hard exclusion (EXCL-01 through EXCL-08). List any triggered.
 4. Identify applicable soft factors (SOFT-01 through SOFT-08). List them.
 5. Make a final decision: APPROVE / REJECT / REVIEW with a clear reason.
 6. If ANY hard exclusion is triggered → decision MUST be REJECT.
 7. If hit-and-run (fault=unknown_hit_and_run) → decision MUST be REVIEW.
-8. If MyInfo shows SUSPENDED licence → trigger EXCL-08 equivalent and REJECT.
+8. For this synthetic demo, apply the profile fixture's licence field but never call it government-verified.
 9. If fraud flags present → include in reasoning, bias toward REVIEW or REJECT.
 10. If Nosana corroboration is WEAK and VideoDB shows collision → flag for REVIEW.
 
@@ -112,13 +112,16 @@ def _myinfo_block(myinfo: Optional[MyInfoResult]) -> str:
     if not myinfo or not myinfo.verified:
         return "- Not available (NRIC not provided or verification skipped)"
     lines = [
+        f"- Source: {myinfo.source}",
+        f"- Live MyInfo provider available: {myinfo.provider_available}",
+        f"- Synthetic fixture: {myinfo.synthetic}",
         f"- Full name: {myinfo.full_name}",
         f"- Registered vehicle: {myinfo.vehicle_make} {myinfo.vehicle_model} ({myinfo.vehicle_plate})",
         f"- Vehicle ownership confirmed in video: {myinfo.vehicle_ownership_confirmed}",
         f"- Driving licence: {('VALID' if myinfo.licence_valid else 'INVALID/SUSPENDED')} — Class {myinfo.licence_class}",
         f"- Demerit points: {myinfo.demerit_points}/24",
         f"- Licence suspended: {myinfo.licence_suspended}",
-        f"- MyInfo trust score: {myinfo.myinfo_score}/100",
+        f"- Synthetic profile score: {myinfo.myinfo_score}/100",
         f"- Triggered by: {myinfo.triggered_by}",
     ]
     return "\n".join(lines)

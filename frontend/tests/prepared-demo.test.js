@@ -92,6 +92,10 @@ test("public selectors and receipts preserve synthetic, non-binding language", a
   assert.match(upload, /Synthetic and non-binding/);
   assert.match(upload, /PREPARED_SCENARIOS/);
   assert.match(analysis, /prepared \? "Prepared step" : "Live"/);
+  assert.match(analysis, /live MyInfo is unavailable/);
+  assert.match(decision, /published-synthetic-myinfo-adapter/);
+  assert.match(decision, /no government system was queried/);
+  assert.match(upload, /no live government lookup/);
   assert.match(decision, /not an authorization, guarantee, coverage finding, or payment/);
   assert.match(receipt, /no authorization, coverage finding, guarantee, or funds transfer/);
 });

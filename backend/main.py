@@ -139,11 +139,15 @@ async def startup():
 
 @app.get("/health")
 def health():
+    hosted_production = bool(os.getenv("VERCEL"))
+    live_synthetic_demo = os.getenv("BYZANTIUM_LIVE_DEMO", "").lower() in {"1", "true", "yes"}
     return {
         "status": "ok",
         "service": "Byzantium AutoClaims",
-        "env": os.getenv("APP_ENV", "development"),
-        "public_demo": _is_public_demo(),
+        "env": os.getenv("APP_ENV", "production" if hosted_production else "development"),
+        "public_demo": hosted_production,
+        "prepared_only": _is_public_demo(),
+        "live_synthetic_workflow": live_synthetic_demo,
         "integrations": {
             "videodb": bool((os.getenv("VIDEODB_API_KEY") or os.getenv("VIDEO_DB_API_KEY") or "").strip()),
             "terminal3": bool(os.getenv("TERMINAL3_API_KEY", "").strip() and os.getenv("TERMINAL3_DID", "").strip()),

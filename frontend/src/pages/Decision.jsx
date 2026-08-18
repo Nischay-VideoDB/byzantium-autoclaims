@@ -231,7 +231,7 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
           value={video_analysis.collision ? `${video_analysis.severity.toUpperCase()} collision — ${video_analysis.fault?.replace(/_/g, " ")}` : "No collision detected"}
           verified={video_analysis.collision}
           prepared={prepared}
-          statusLabel={!prepared && video_analysis.source === "videodb" ? "VideoDB analyzed" : ""}
+          statusLabel={!prepared && video_analysis.source === "videodb-live" ? "VideoDB analyzed" : ""}
         />
         <EvidenceCard
           icon="🛡️"

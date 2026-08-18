@@ -25,7 +25,7 @@ class VideoAnalysis(BaseModel):
     plate_detected: str = "not_visible"  # plate extracted from footage
     camera_pov: str = "unknown"       # first_person | third_person | unknown
     point_of_impact: str = "unknown"  # front | rear | driver_side | passenger_side | unknown
-    source: str = "videodb"
+    source: str = "videodb-live"
 
 
 class NosanaAnalysis(BaseModel):

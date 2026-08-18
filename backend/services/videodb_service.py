@@ -160,7 +160,7 @@ async def analyze_video(video_path: str, filename: str = "") -> VideoAnalysis:
                 single_vehicle=True, audio_evidence=audio_evidence,
                 damage_description="No damage visible.",
                 clip_url=evidence_stream, frame_url=frame_url,
-                source="videodb"
+                source="videodb-live"
             )
 
         # ── 4. Parse structured output from shot descriptions ─────────────────
@@ -225,7 +225,7 @@ async def analyze_video(video_path: str, filename: str = "") -> VideoAnalysis:
             plate_detected=plate_detected,
             camera_pov=fields.get("CAMERA_POV", "unknown"),
             point_of_impact=fields.get("POINT_OF_IMPACT", "unknown"),
-            source="videodb"
+            source="videodb-live"
         )
 
     except Exception as exc:

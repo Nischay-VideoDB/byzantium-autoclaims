@@ -41,15 +41,25 @@ async def submit_processing_job(claim_id: str, video_filename: str, video_path: 
         if submitted:
             return {**submitted, **second_opinion, "source": "nosana-gpu"}
 
-    # Local analysis with Nosana job record
-    print(f"[Nosana] Using local GPU-equivalent analysis for {video_filename}")
+    # Never present a deterministic stand-in as a live Nosana provider result.
+    print(f"[Nosana] Provider not configured for {video_filename}; marking stage unavailable")
     return {
         "job_id": job_id,
-        "status": "completed",
-        "compute": "nosana-local-gpu",
+        "status": "unavailable",
+        "compute": "not-run",
         "submitted_at": datetime.utcnow().isoformat(),
-        **second_opinion,
-        "source": "nosana-local",
+        "clip_verdict": "NOT_RUN",
+        "collision_signal_strength": 0,
+        "impact_timestamp": "",
+        "motion_score": 0,
+        "scene_labels": [],
+        "integrity_score": 0,
+        "temporal_consistency": True,
+        "editing_artifacts_detected": False,
+        "corroboration": "UNKNOWN",
+        "frame_count_analyzed": 0,
+        "summary": "Nosana was not called because NOSANA_API_KEY is not configured; VideoDB remains the live video evidence source.",
+        "source": "provider-unavailable",
     }
 
 

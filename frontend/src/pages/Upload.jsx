@@ -29,6 +29,28 @@ export default function Upload({ onUploaded, onStartPreparedDemo, publicShowcase
     }
   }
 
+  function fillSyntheticPersona() {
+    const next = { claimantName: "Jane Smith", claimantId: "DEMO-LICENCE", nric: "S9812381D", vehiclePlate: "SLD9775A" };
+    setForm(next);
+    triggerPolicyLookup(next.claimantName, next.vehiclePlate);
+  }
+
+  async function loadSampleFootage() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4");
+      if (!response.ok) throw new Error("sample download failed");
+      const blob = await response.blob();
+      setFile(new File([blob], "synthetic-demo-footage.mp4", { type: "video/mp4" }));
+      fillSyntheticPersona();
+    } catch {
+      setError("The sample footage could not be loaded. Upload an MP4 under 20 MB instead.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function handleDrop(e) {
     e.preventDefault();
     setDragging(false);
@@ -206,8 +228,11 @@ export default function Upload({ onUploaded, onStartPreparedDemo, publicShowcase
           Upload your dashcam footage and claimant details. Policy is verified automatically from your vehicle plate.
         </p>
         <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
-          Demonstration only - use synthetic data. The public showcase does not accept uploads or retain personal claim details.
+          Demonstration only. The public runner accepts only the published synthetic persona Jane Smith / SLD9775A / S9812381D. Footage is stored durably for the demo and processed by VideoDB; never submit personal data.
         </p>
+        <button type="button" onClick={loadSampleFootage} disabled={loading} className="mt-3 rounded-lg border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-xs font-semibold text-blue-200 hover:bg-blue-500/20">
+          Load synthetic persona + sample footage
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -347,16 +372,29 @@ export default function Upload({ onUploaded, onStartPreparedDemo, publicShowcase
               Uploading...
             </span>
           ) : (
-            "Submit Claim →"
+            "Run Synthetic Review →"
           )}
         </button>
       </form>
+
+      <section className="mt-10 border-t border-gray-800 pt-8">
+        <h3 className="text-sm font-semibold uppercase tracking-widest text-gray-300">Or explore prepared reviews</h3>
+        <p className="mt-2 text-xs text-gray-500">Instant, read-only examples remain available alongside the live synthetic workflow.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {PREPARED_SCENARIOS.map((scenario) => (
+            <button key={scenario.id} type="button" onClick={() => onStartPreparedDemo(scenario)} className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-left hover:border-blue-500/50">
+              <span className="text-xs font-semibold text-blue-300">{scenario.path}</span>
+              <span className="mt-1 block text-sm font-bold text-white">{scenario.title}</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       {/* Sponsor logos */}
       <div className="mt-8 pt-6 border-t border-gray-800">
         <p className="text-xs text-gray-600 text-center mb-3">Powered by</p>
         <div className="flex items-center justify-center gap-6 flex-wrap">
-          {["VideoDB", "Terminal 3", "Kimi AI", "Daytona", "Nosana", "SenseNova", "SingPass"].map((s) => (
+          {["VideoDB live video analysis", "OpenRouter live policy reasoning", "Azure PostgreSQL", "Vercel Blob", "Local policy engine"].map((s) => (
             <span key={s} className="text-xs text-gray-600 font-medium bg-gray-900 border border-gray-800 px-2.5 py-1 rounded">
               {s}
             </span>

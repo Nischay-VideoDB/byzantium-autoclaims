@@ -9,6 +9,7 @@ python-docx
 # Database
 sqlalchemy
 psycopg[binary]
+vercel==0.10.0
 
 # AI / LLM
 anthropic

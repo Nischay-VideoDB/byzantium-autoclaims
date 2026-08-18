@@ -330,7 +330,9 @@ async def run_claim_agent(
         except Exception as exc:
             print(f"[Daytona] Sandbox error: {exc} — falling back to local")
 
-    return _claim_agent_logic(video_analysis, identity_result, kimi_result, myinfo_result, fraud_result)
+    result = _claim_agent_logic(video_analysis, identity_result, kimi_result, myinfo_result, fraud_result)
+    result["source"] = "local-policy-engine"
+    return result
 
 
 async def _run_in_sandbox(api_key: str, video: dict, identity: dict, kimi: dict, myinfo: dict = None, fraud: dict = None) -> dict:

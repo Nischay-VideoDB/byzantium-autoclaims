@@ -92,6 +92,6 @@ test("public selectors and receipts preserve synthetic, non-binding language", a
   assert.match(upload, /Synthetic and non-binding/);
   assert.match(upload, /PREPARED_SCENARIOS/);
   assert.match(analysis, /prepared \? "Prepared step" : "Live"/);
-  assert.match(decision, /not an authorization, guarantee, or payment/);
-  assert.match(receipt, /no authorization, guarantee, or funds transfer/);
+  assert.match(decision, /not an authorization, guarantee, coverage finding, or payment/);
+  assert.match(receipt, /no authorization, coverage finding, guarantee, or funds transfer/);
 });

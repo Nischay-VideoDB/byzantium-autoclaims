@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "app.py": {
+      "maxDuration": 800,
+      "includeFiles": "{policies/**,*.py,services/**}"
+    }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/app.py" }]
+}

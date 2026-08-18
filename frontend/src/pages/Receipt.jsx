@@ -14,6 +14,7 @@ function ReceiptRow({ label, value, highlight }) {
 export default function Receipt({ claimId, onReset, preparedReceipt = null }) {
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState(null);
+  const demo = Boolean(preparedReceipt) || import.meta.env.VITE_LIVE_DEMO === "true";
 
   useEffect(() => {
     if (preparedReceipt) {
@@ -58,9 +59,9 @@ export default function Receipt({ claimId, onReset, preparedReceipt = null }) {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-1">{preparedReceipt ? "Prepared Audit Receipt" : "Liability Receipt"}</h2>
+        <h2 className="text-2xl font-bold text-white mb-1">{preparedReceipt ? "Prepared Audit Receipt" : "Non-Binding Demo Audit"}</h2>
         <p className="text-gray-400 text-sm">
-          {preparedReceipt
+          {demo
             ? "A non-binding synthetic audit record for the public product walkthrough."
             : "Official record of the Byzantium claims decision."}
         </p>
@@ -131,7 +132,7 @@ export default function Receipt({ claimId, onReset, preparedReceipt = null }) {
         <div className="px-6 py-5 border-t border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs text-gray-500 uppercase tracking-widest">Decision</span>
-            <DecisionBadge decision={receipt.decision} size="sm" prepared={Boolean(preparedReceipt)} />
+            <DecisionBadge decision={receipt.decision} size="sm" prepared={demo} />
           </div>
           <p className="text-sm text-gray-300 leading-relaxed">{receipt.reason}</p>
         </div>
@@ -147,12 +148,12 @@ export default function Receipt({ claimId, onReset, preparedReceipt = null }) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">
-                {preparedReceipt ? "Illustrative amount" : receipt.decision === "APPROVE" ? "Authorized Payout" : "Payout"}
+                Illustrative amount
               </p>
               <p className={`text-3xl font-black ${
                 receipt.decision === "APPROVE" ? "text-green-400" : "text-gray-500"
               }`}>
-                {preparedReceipt
+                {demo
                   ? receipt.decision === "APPROVE" ? `$${receipt.payout_amount.toLocaleString()}` : "Not assessed"
                   : receipt.decision === "APPROVE" ? `$${receipt.payout_amount.toLocaleString()}` : receipt.decision === "REVIEW" ? "Pending" : "$0.00"}
               </p>
@@ -162,16 +163,14 @@ export default function Receipt({ claimId, onReset, preparedReceipt = null }) {
             )}
           </div>
           {receipt.decision !== "REVIEW" && (
-            <p className="text-xs text-gray-600 mt-2">{preparedReceipt ? "Prepared amount only - no authorization, guarantee, or funds transfer." : "Simulated payout — no real funds transferred"}</p>
+            <p className="text-xs text-gray-600 mt-2">Demo amount only - no authorization, coverage finding, guarantee, or funds transfer.</p>
           )}
         </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-800 bg-gray-900/30">
           <p className="text-xs text-gray-600 text-center">
-            {preparedReceipt
-              ? "Prepared synthetic walkthrough - not a claim, policy record, evidence verification, or payout authorization."
-              : "This receipt was generated automatically by Byzantium AutoClaims. Powered by VideoDB · Terminal 3 · Kimi AI · Daytona · Nosana."}
+            Synthetic public demo - not a claim, policy record, legal finding, evidence verification, or payout authorization. Live stages: VideoDB and OpenRouter; other stages are clearly labelled adapters or unavailable.
           </p>
         </div>
       </div>

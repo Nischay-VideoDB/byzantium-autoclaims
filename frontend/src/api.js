@@ -17,7 +17,11 @@ export async function uploadClaim({ video, claimantName, claimantId, nric, vehic
   form.append("nric", nric || "");
   form.append("vehicle_plate", vehiclePlate || "");
   form.append("policy_number", policyNumber || "");
-  return request("/upload-video", { method: "POST", body: form });
+  const key = sessionStorage.getItem("byzantium-upload-key") || crypto.randomUUID();
+  sessionStorage.setItem("byzantium-upload-key", key);
+  const result = await request("/upload-video", { method: "POST", body: form, headers: { "Idempotency-Key": key } });
+  sessionStorage.removeItem("byzantium-upload-key");
+  return result;
 }
 
 export async function lookupPolicy(name, plate) {

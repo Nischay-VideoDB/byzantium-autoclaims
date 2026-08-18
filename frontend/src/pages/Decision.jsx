@@ -161,13 +161,14 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
   if (!data) return null;
 
   const { video_analysis, identity_result, myinfo_result, nosana_analysis, kimi_result, trust_score_result, payout_amount } = data;
+  const demo = prepared || import.meta.env.VITE_LIVE_DEMO === "true";
 
   return (
     <div>
       <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-1">{prepared ? "Prepared Review Outcome" : "Claim Decision"}</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">{prepared ? "Prepared Review Outcome" : "Synthetic Demo Outcome"}</h2>
         <p className="text-gray-400 text-sm">
-          {prepared
+          {demo
             ? "Synthetic signals are presented for product demonstration only. They are not verified evidence or a real-world claim decision."
             : "Byzantium has evaluated all evidence and made a final determination."}
         </p>
@@ -184,9 +185,9 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
         <TrustScore
           score={trust_score_result.trust_score}
           riskLevel={trust_score_result.risk_level}
-          prepared={prepared}
+          prepared={demo}
         />
-        <DecisionBadge decision={trust_score_result.decision} size="lg" prepared={prepared} />
+        <DecisionBadge decision={trust_score_result.decision} size="lg" prepared={demo} />
       </div>
 
       {/* Reason */}
@@ -194,7 +195,7 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
         <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">AI Reasoning</p>
         <p className="text-gray-300 text-sm leading-relaxed">{trust_score_result.reason}</p>
         <div className="mt-3 pt-3 border-t border-gray-800 flex items-center gap-2">
-          <span className="text-xs text-gray-500">{prepared ? "Prepared reasoning:" : "Kimi AI:"}</span>
+          <span className="text-xs text-gray-500">{prepared ? "Prepared reasoning:" : "OpenRouter demo reasoning:"}</span>
           <span className="text-xs text-gray-400 italic">
             "{kimi_result.reason}"
           </span>
@@ -208,40 +209,40 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <EvidenceCard
           icon="🎬"
-          title={prepared ? "Prepared Video Signal" : "Video Evidence"}
+          title={demo ? "Demo Video Signal" : "Video Evidence"}
           value={video_analysis.collision ? `${video_analysis.severity.toUpperCase()} collision — ${video_analysis.fault?.replace(/_/g, " ")}` : "No collision detected"}
           verified={video_analysis.collision}
-          prepared={prepared}
+          prepared={demo}
         />
         <EvidenceCard
           icon="🛡️"
-          title={prepared ? "Prepared Identity Signal" : "Identity"}
+          title={demo ? "Synthetic Identity Signal" : "Identity"}
           value={`Score: ${identity_result.identity_score}/100 via ${identity_result.source}`}
           verified={identity_result.verified}
-          prepared={prepared}
+          prepared={demo}
         />
       </div>
 
-      <NosanaCard nosana={nosana_analysis} prepared={prepared} />
-      <MyInfoCard myinfo={myinfo_result} prepared={prepared} />
+      <NosanaCard nosana={nosana_analysis} prepared={demo} />
+      <MyInfoCard myinfo={myinfo_result} prepared={demo} />
 
       <ScoreBreakdown breakdown={trust_score_result.breakdown} />
 
       {/* Payout simulation */}
       {trust_score_result.decision === "APPROVE" && (
         <div className="mt-4 bg-green-500/5 border border-green-500/20 rounded-xl p-5 text-center">
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">{prepared ? "Illustrative amount" : "Payout Authorized"}</p>
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Illustrative amount</p>
           <p className="text-4xl font-black text-green-400">
             💰 ${payout_amount.toLocaleString()}
           </p>
-          <p className="text-gray-500 text-xs mt-1">{prepared ? "Prepared example only - not an authorization, guarantee, or payment." : "Simulated — no real funds transferred"}</p>
+          <p className="text-gray-500 text-xs mt-1">Demo only - not an authorization, guarantee, coverage finding, or payment.</p>
         </div>
       )}
 
       {trust_score_result.decision === "REJECT" && (
         <div className="mt-4 bg-red-500/5 border border-red-500/20 rounded-xl p-5 text-center">
           <p className="text-4xl font-black text-red-400">💸 $0.00</p>
-          <p className="text-gray-500 text-xs mt-1">{prepared ? "Prepared escalation only - a licensed human reviewer would determine any real outcome." : "Claim does not meet approval criteria"}</p>
+          <p className="text-gray-500 text-xs mt-1">Demo outcome only - a licensed human reviewer would determine any real outcome.</p>
         </div>
       )}
 
@@ -249,7 +250,7 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
         <div className="mt-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-5 text-center">
           <p className="text-yellow-400 font-bold">⏳ Pending Manual Review</p>
           <p className="text-gray-500 text-xs mt-1">
-            {prepared ? "Prepared outcome only - no claim has been submitted or assigned." : "A claims agent will review this within 24 hours"}
+            Demo outcome only - no real claim has been submitted or assigned.
           </p>
         </div>
       )}
@@ -258,7 +259,7 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
         onClick={onViewReceipt}
         className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all"
       >
-        {prepared ? "View Prepared Review Receipt →" : "View Liability Receipt →"}
+        {prepared ? "View Prepared Review Receipt →" : "View Non-Binding Audit Receipt →"}
       </button>
     </div>
   );

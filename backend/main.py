@@ -4,10 +4,11 @@ import os
 import uuid
 import json
 import shutil
+import hashlib
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from fastapi import FastAPI, File, Form, UploadFile, Depends, HTTPException
+from fastapi import FastAPI, File, Form, UploadFile, Depends, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -15,7 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from database import init_db, get_db, ClaimRecord
+from database import init_db, get_db, ClaimRecord, DATABASE_URL
 from models import (
     ClaimUploadResponse,
     AnalysisResponse,
@@ -42,8 +43,9 @@ IS_VERCEL = bool(os.getenv("VERCEL"))
 
 
 def _is_public_demo() -> bool:
-    """Vercel hosts a prepared, synthetic-only showcase - never live claim intake."""
-    return IS_VERCEL or os.getenv("BYZANTIUM_DEMO_MODE", "").lower() in {"1", "true", "yes"}
+    """Prepared-only mode is used unless the synthetic live demo is explicitly enabled."""
+    live = os.getenv("BYZANTIUM_LIVE_DEMO", "").lower() in {"1", "true", "yes"}
+    return not live
 
 
 def _runtime_directory(variable: str, local_default: str, ephemeral_name: str) -> Path:
@@ -71,6 +73,25 @@ def _require_private_claim_workflow() -> None:
             status_code=403,
             detail="This public showcase accepts no uploads, policy records, or personal claim data.",
         )
+
+
+def _validate_synthetic_identity(name: str, plate: str, nric: str) -> None:
+    """The public live runner accepts one published synthetic persona only."""
+    if os.getenv("BYZANTIUM_LIVE_DEMO", "").lower() not in {"1", "true", "yes"}:
+        return
+    normalized = (name.strip().lower(), plate.strip().upper().replace(" ", ""), nric.strip().upper())
+    if normalized != ("jane smith", "SLD9775A", "S9812381D"):
+        raise HTTPException(
+            status_code=422,
+            detail="Public demo accepts only the synthetic persona Jane Smith / SLD9775A / S9812381D.",
+        )
+
+
+def _requester_hash(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for", request.client.host if request.client else "anonymous")
+    value = forwarded.split(",")[0].strip()
+    salt = os.getenv("BYZANTIUM_REQUEST_SALT", "byzantium-public-v1")
+    return hashlib.sha256(f"{salt}:{value}".encode()).hexdigest()
 
 
 def _require_final_video_evidence(video_result: VideoAnalysis) -> None:
@@ -124,12 +145,15 @@ def health():
         "env": os.getenv("APP_ENV", "development"),
         "public_demo": _is_public_demo(),
         "integrations": {
-            "videodb": bool(os.getenv("VIDEODB_API_KEY", "").strip()),
+            "videodb": bool((os.getenv("VIDEODB_API_KEY") or os.getenv("VIDEO_DB_API_KEY") or "").strip()),
             "terminal3": bool(os.getenv("TERMINAL3_API_KEY", "").strip() and os.getenv("TERMINAL3_DID", "").strip()),
             "kimi": bool(os.getenv("KIMI_API_KEY", "").strip()),
             "tokenrouter": bool(os.getenv("TOKENROUTER_API_KEY", "").strip()),
             "daytona": bool(os.getenv("DAYTONA_API_KEY", "").strip()),
             "nosana": bool(os.getenv("NOSANA_API_KEY", "").strip()),
+            "openrouter": bool(os.getenv("OPEN_ROUTER_API_KEY", "").strip()),
+            "durable_database": DATABASE_URL.startswith("postgresql"),
+            "blob": bool(os.getenv("BLOB_READ_WRITE_TOKEN", "").strip()),
         },
     }
 
@@ -141,15 +165,33 @@ def health():
 
 @app.post("/upload-video", response_model=ClaimUploadResponse)
 async def upload_video(
+    request: Request,
     video: UploadFile = File(...),
     claimant_name: str = Form(...),
     claimant_id_number: str = Form(default=""),
     nric: str = Form(default=""),
     vehicle_plate: str = Form(default=""),
     policy_number: str = Form(default=""),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
 ):
     _require_private_claim_workflow()
+    _validate_synthetic_identity(claimant_name, vehicle_plate, nric)
+    if not idempotency_key or len(idempotency_key) > 120:
+        raise HTTPException(status_code=400, detail="A valid Idempotency-Key header is required.")
+    existing = db.query(ClaimRecord).filter(ClaimRecord.idempotency_key == idempotency_key).first()
+    if existing:
+        return ClaimUploadResponse(claim_id=existing.claim_id, message="Existing idempotent demo claim returned.", status=existing.status)
+    identity_hash = _requester_hash(request)
+    recent = db.query(ClaimRecord).filter(
+        ClaimRecord.requester_hash == identity_hash,
+        ClaimRecord.created_at >= datetime.utcnow().replace(microsecond=0) - timedelta(hours=1),
+    ).count()
+    if recent >= 3:
+        raise HTTPException(status_code=429, detail="Public demo limit reached: three claims per hour.")
+    allowed_types = {"video/mp4", "video/quicktime", "video/webm"}
+    if video.content_type not in allowed_types:
+        raise HTTPException(status_code=415, detail="Use an MP4, MOV, or WebM video.")
     claim_id = f"CLM-{uuid.uuid4().hex[:8].upper()}"
 
     # Auto-lookup policy from plate if no policy number given
@@ -162,13 +204,23 @@ async def upload_video(
     if not resolved_policy_number:
         resolved_policy_number = f"POL-{claim_id[-6:]}"
 
-    # Save uploaded video
-    ext = Path(video.filename).suffix or ".mp4"
+    # Store the synthetic demo footage durably; reject oversized uploads before provider use.
+    data = await video.read(20 * 1024 * 1024 + 1)
+    if len(data) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Synthetic demo video must be 20 MB or smaller.")
+    if len(data) < 1024:
+        raise HTTPException(status_code=400, detail="The uploaded video is empty or invalid.")
+    ext = Path(video.filename or "demo.mp4").suffix.lower() or ".mp4"
     video_filename = f"{claim_id}{ext}"
-    video_path = _upload_directory() / video_filename
-
-    with open(video_path, "wb") as f:
-        shutil.copyfileobj(video.file, f)
+    try:
+        from vercel.blob import AsyncBlobClient
+        blob = await AsyncBlobClient().put(
+            f"byzantium/synthetic-claims/{video_filename}", data,
+            access="public", add_random_suffix=True, content_type=video.content_type,
+        )
+        video_path = blob.url
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Durable video storage is temporarily unavailable.") from exc
 
     # Create claim record
     claim = ClaimRecord(
@@ -180,6 +232,9 @@ async def upload_video(
         policy_number=resolved_policy_number,
         video_path=str(video_path),
         video_filename=video_filename,
+        blob_url=str(video_path),
+        idempotency_key=idempotency_key,
+        requester_hash=identity_hash,
         status="uploaded",
     )
     db.add(claim)

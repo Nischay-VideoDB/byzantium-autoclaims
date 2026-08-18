@@ -132,12 +132,6 @@ export function isLoopbackHostname(hostname) {
 
 export function isPreparedShowcase() {
   if (typeof window === "undefined") return true;
-
-  const hostname = window.location.hostname.toLowerCase();
-  const isLocalHost = isLoopbackHostname(hostname);
-  const liveOperatorOptIn = typeof import.meta.env !== "undefined" && import.meta.env.VITE_LIVE_OPERATOR === "true";
-
-  // Public deployments fail closed into the synthetic showcase. The live
-  // upload/PII workflow is available only through an explicit local opt-in.
-  return !(isLocalHost && liveOperatorOptIn);
+  const liveDemo = typeof import.meta.env !== "undefined" && import.meta.env.VITE_LIVE_DEMO === "true";
+  return !liveDemo;
 }

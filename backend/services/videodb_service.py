@@ -95,7 +95,7 @@ AUDIO_SEARCH_TERMS = [
 # ── Main entry point ───────────────────────────────────────────────────────────
 
 async def analyze_video(video_path: str, filename: str = "") -> VideoAnalysis:
-    api_key = os.getenv("VIDEODB_API_KEY", "").strip()
+    api_key = (os.getenv("VIDEODB_API_KEY") or os.getenv("VIDEO_DB_API_KEY") or "").strip()
     if not api_key:
         if _synthetic_evidence_enabled():
             return random.choice(MOCK_ANALYSES)
@@ -109,7 +109,7 @@ async def analyze_video(video_path: str, filename: str = "") -> VideoAnalysis:
         coll = conn.get_collection()
 
         print(f"[VideoDB] Uploading: {filename}")
-        video = coll.upload(file_path=video_path)
+        video = coll.upload(url=video_path) if video_path.startswith("https://") else coll.upload(file_path=video_path)
         print(f"[VideoDB] video_id={video.id}")
 
         # ── 1. Shot-based scene indexing with structured prompt ────────────────

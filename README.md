@@ -186,11 +186,14 @@ the local SQLite file and local upload directory are suitable only for local
 development. The current `claims` schema is defined by `backend/database.py` and
 must be migrated before attaching a production database.
 
-The Vercel deployment is deliberately a read-only synthetic showcase: it rejects
-uploads, policy lookups, claim listings, and final decisions. It writes only
-ephemeral request input under `/tmp` and never treats mock VideoDB output as
-verified evidence. A live claims product requires a separate reviewed deployment
-with managed storage, access controls, and compliance approval.
+The public Vercel demo now keeps the prepared walkthroughs and also exposes a
+fresh synthetic-only workflow. It accepts only the published Jane Smith / SLD9775A /
+S9812381D persona, limits MP4/MOV/WebM uploads to 20 MB, stores footage in Vercel
+Blob, persists idempotent claim state in a dedicated Azure PostgreSQL database,
+and executes real VideoDB analysis plus OpenRouter policy reasoning. Missing
+hackathon sponsors are shown as unavailable or local policy adapters, never as
+live provider evidence. Every outcome and receipt is explicitly non-binding and
+demonstration-only; this is not a consumer insurance service.
 
 ---
 

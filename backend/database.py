@@ -32,6 +32,9 @@ class ClaimRecord(Base):
     policy_number = Column(String, nullable=True)
     video_path = Column(String, nullable=True)
     video_filename = Column(String, nullable=True)
+    blob_url = Column(Text, nullable=True)
+    idempotency_key = Column(String, unique=True, nullable=True, index=True)
+    requester_hash = Column(String, nullable=True, index=True)
     nric = Column(String, nullable=True)
     vehicle_plate = Column(String, nullable=True)
     status = Column(String, default="pending")  # pending | analyzing | complete | error
@@ -60,12 +63,21 @@ def init_db():
     with engine.connect() as conn:
         for col_sql in [
             "ALTER TABLE claims ADD COLUMN vehicle_plate VARCHAR",
+            "ALTER TABLE claims ADD COLUMN blob_url TEXT",
+            "ALTER TABLE claims ADD COLUMN idempotency_key VARCHAR",
+            "ALTER TABLE claims ADD COLUMN requester_hash VARCHAR",
         ]:
             try:
                 conn.execute(text(col_sql))
                 conn.commit()
             except Exception:
                 pass  # Column already exists
+        for index_sql in [
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_claims_idempotency_key ON claims (idempotency_key)",
+            "CREATE INDEX IF NOT EXISTS ix_claims_requester_hash ON claims (requester_hash)",
+        ]:
+            conn.execute(text(index_sql))
+            conn.commit()
 
 
 def get_db():

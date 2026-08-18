@@ -234,8 +234,15 @@ async def evaluate_claim(
     tokenrouter_key = os.getenv("TOKENROUTER_API_KEY", "").strip()
     tokenrouter_base = os.getenv("TOKENROUTER_BASE_URL", "https://api.tokenrouter.com/v1").strip()
     anthropic_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    openrouter_key = os.getenv("OPEN_ROUTER_API_KEY", "").strip()
 
     user_prompt = _build_user_prompt(video, identity, myinfo, nosana, fraud)
+
+    if openrouter_key:
+        model = os.getenv("OPENROUTER_MODEL", "openai/gpt-4.1-mini")
+        result = await _call_openai_compatible(openrouter_key, "https://openrouter.ai/api/v1", model, user_prompt, "openrouter-live")
+        if result:
+            return result
 
     if kimi_key:
         result = await _call_openai_compatible(kimi_key, kimi_base, "moonshot-v1-8k", user_prompt, "kimi")

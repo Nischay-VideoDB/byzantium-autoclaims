@@ -58,26 +58,22 @@ class ClaimRecord(Base):
 
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
-    # Safe migration: add columns that may be missing from existing DBs
-    with engine.connect() as conn:
-        for col_sql in [
-            "ALTER TABLE claims ADD COLUMN vehicle_plate VARCHAR",
-            "ALTER TABLE claims ADD COLUMN blob_url TEXT",
-            "ALTER TABLE claims ADD COLUMN idempotency_key VARCHAR",
-            "ALTER TABLE claims ADD COLUMN requester_hash VARCHAR",
-        ]:
-            try:
+    # Serverless cold starts may race. A transaction-scoped advisory lock makes
+    # PostgreSQL schema initialization single-writer and every DDL is idempotent.
+    with engine.begin() as conn:
+        if engine.dialect.name == "postgresql":
+            conn.execute(text("SELECT pg_advisory_xact_lock(91826061)"))
+        Base.metadata.create_all(bind=conn)
+        if engine.dialect.name == "postgresql":
+            for col_sql in [
+                "ALTER TABLE claims ADD COLUMN IF NOT EXISTS vehicle_plate VARCHAR",
+                "ALTER TABLE claims ADD COLUMN IF NOT EXISTS blob_url TEXT",
+                "ALTER TABLE claims ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR",
+                "ALTER TABLE claims ADD COLUMN IF NOT EXISTS requester_hash VARCHAR",
+            ]:
                 conn.execute(text(col_sql))
-                conn.commit()
-            except Exception:
-                pass  # Column already exists
-        for index_sql in [
-            "CREATE UNIQUE INDEX IF NOT EXISTS ix_claims_idempotency_key ON claims (idempotency_key)",
-            "CREATE INDEX IF NOT EXISTS ix_claims_requester_hash ON claims (requester_hash)",
-        ]:
-            conn.execute(text(index_sql))
-            conn.commit()
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_claims_idempotency_key ON claims (idempotency_key)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_claims_requester_hash ON claims (requester_hash)"))
 
 
 def get_db():

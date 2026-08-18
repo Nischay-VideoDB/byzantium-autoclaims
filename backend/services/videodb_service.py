@@ -136,13 +136,23 @@ async def analyze_video(video_path: str, filename: str = "") -> VideoAnalysis:
         collision = len(shots) > 0
 
         if not collision:
-            evidence_stream = ""
+            # Preserve a playable copy of the submitted evidence even when no
+            # collision segment was found.  Uploaded VideoDB assets expose a
+            # durable HLS URL; older SDK versions require an explicit timeline.
+            evidence_stream = str(getattr(video, "stream_url", "") or "")
             frame_url = ""
+            if not evidence_stream:
+                try:
+                    duration = float(getattr(video, "length", 30) or 30)
+                    evidence_stream = str(video.generate_stream(
+                        timeline=[(0, max(1, min(duration, 60)))]
+                    ) or "")
+                except Exception as stream_error:
+                    logger.warning("VideoDB negative-evidence playback unavailable: %s", stream_error)
             try:
-                evidence_stream = str(video.generate_stream() or "")
                 frame_url = str(video.generate_thumbnail(time=0) or "")
-            except Exception as stream_error:
-                logger.warning("VideoDB negative-evidence playback unavailable: %s", stream_error)
+            except Exception as thumbnail_error:
+                logger.warning("VideoDB negative-evidence thumbnail unavailable: %s", thumbnail_error)
             return VideoAnalysis(
                 collision=False, severity="none", timestamp="N/A",
                 summary="No collision detected in dashcam footage.",

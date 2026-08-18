@@ -498,6 +498,7 @@ async def stream_claim(claim_id: str):
                 "damage_description": video_result.damage_description,
                 "camera_pov": video_result.camera_pov,
                 "point_of_impact": video_result.point_of_impact,
+                "source": video_result.source,
             })
 
             # 3. Terminal 3

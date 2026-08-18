@@ -476,6 +476,8 @@ async def stream_claim(claim_id: str):
                 "corroboration": nosana_job.get("corroboration", ""),
                 "editing_artifacts_detected": nosana_job.get("editing_artifacts_detected", False),
                 "summary": nosana_job.get("summary", ""),
+                "source": nosana_job.get("source", "provider-unavailable"),
+                "provider_status": nosana_job.get("status", "unavailable"),
             })
 
             # 2. VideoDB
@@ -604,6 +606,7 @@ async def stream_claim(claim_id: str):
                 "confidence": kimi_result.confidence,
                 "exclusions_triggered": kimi_result.exclusions_triggered,
                 "soft_factors_applied": kimi_result.soft_factors_applied,
+                "source": kimi_result.source,
             })
 
             # 7. Daytona — ClaimAgent with fraud flags
@@ -618,6 +621,7 @@ async def stream_claim(claim_id: str):
             yield emit("daytona", "done", {
                 "hard_reject": daytona_result.get("hard_reject", False),
                 "fraud_flags": daytona_result.get("fraud_flags", []),
+                "source": daytona_result.get("source", "local-policy-engine"),
             })
 
             # 6. Byzantium

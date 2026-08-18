@@ -136,12 +136,20 @@ async def analyze_video(video_path: str, filename: str = "") -> VideoAnalysis:
         collision = len(shots) > 0
 
         if not collision:
+            evidence_stream = ""
+            frame_url = ""
+            try:
+                evidence_stream = str(video.generate_stream() or "")
+                frame_url = str(video.generate_thumbnail(time=0) or "")
+            except Exception as stream_error:
+                logger.warning("VideoDB negative-evidence playback unavailable: %s", stream_error)
             return VideoAnalysis(
                 collision=False, severity="none", timestamp="N/A",
                 summary="No collision detected in dashcam footage.",
                 fault="none", vehicle_count=1, conditions="clear_daylight",
                 single_vehicle=True, audio_evidence=audio_evidence,
                 damage_description="No damage visible.",
+                clip_url=evidence_stream, frame_url=frame_url,
                 source="videodb"
             )
 

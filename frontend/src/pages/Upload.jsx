@@ -39,10 +39,12 @@ export default function Upload({ onUploaded, onStartPreparedDemo, publicShowcase
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4");
+      const response = await fetch("https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", {
+        signal: AbortSignal.timeout(20000),
+      });
       if (!response.ok) throw new Error("sample download failed");
       const blob = await response.blob();
-      setFile(new File([blob], "synthetic-demo-footage.mp4", { type: "video/mp4" }));
+      setFile(new File([blob], "non-crash-flower-sample.mp4", { type: "video/mp4" }));
       fillSyntheticPersona();
     } catch {
       setError("The sample footage could not be loaded. Upload an MP4 under 20 MB instead.");
@@ -233,6 +235,9 @@ export default function Upload({ onUploaded, onStartPreparedDemo, publicShowcase
         <button type="button" onClick={loadSampleFootage} disabled={loading} className="mt-3 rounded-lg border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-xs font-semibold text-blue-200 hover:bg-blue-500/20">
           Load synthetic persona + sample footage
         </button>
+        <p className="mt-2 text-xs text-gray-400">
+          The MDN flower sample contains no crash. Use it to test how the workflow handles footage without collision evidence.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

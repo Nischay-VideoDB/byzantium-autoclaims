@@ -2,7 +2,7 @@
 
 > Non-binding synthetic motor-claim demonstrations — from dashcam evidence to an explainable demo outcome.
 
-Byzantium AutoClaims preserves the hackathon's multi-agent workflow while constraining the public deployment to one published synthetic persona. It ingests real submitted demo footage with VideoDB, evaluates the synthetic policy context with OpenRouter, and streams a non-binding APPROVE / REVIEW / REJECT demonstration. No government identity system, insurer, claim, coverage finding, or payout authorization is represented as live.
+Byzantium AutoClaims preserves the hackathon's multi-agent workflow while constraining the public deployment to one published synthetic persona. It ingests real submitted demo footage with VideoDB, evaluates the synthetic policy context with OpenAI, and streams a non-binding APPROVE / REVIEW / REJECT demonstration. No government identity system, insurer, claim, coverage finding, or payout authorization is represented as live.
 
 ---
 
@@ -27,7 +27,7 @@ Upload
   ├─ 4. Profile adapter   — published synthetic vehicle/licence fixture; live MyInfo is unavailable
   ├─ 4b. Plate Cross-check— VideoDB-detected plate vs synthetic registered plate
   ├─ 5. Fraud Detection   — duplicate claims (30d / 24h), vehicle fingerprint (via Daytona)
-  ├─ 6. OpenRouter        — live policy-aware reasoning over the evidence
+  ├─ 6. OpenAI        — live policy-aware reasoning over the evidence
   ├─ 7. Policy engine     — bounded local hard-exclusion enforcement; Daytona is optional/unavailable
   └─ 8. Byzantium Score   — trust score 0–1000 → APPROVE / REVIEW / REJECT + payout
 ```
@@ -39,7 +39,7 @@ Upload
 | Sponsor | Role |
 |---|---|
 | **VideoDB** | Dashcam video ingestion, shot-based scene indexing, crash frame thumbnail, spoken-word indexing |
-| **OpenRouter** | Live multi-factor synthetic-claim reasoning against policy terms and VideoDB evidence |
+| **OpenAI** | Live multi-factor synthetic-claim reasoning against policy terms and VideoDB evidence |
 | **Azure PostgreSQL** | Durable claim/run state, decisions, idempotency, and per-requester rate bounds |
 | **Vercel Blob** | Durable public storage for the uploaded synthetic demo footage |
 | **Optional providers** | Terminal 3, Daytona, Nosana, SenseNova and MyInfo are labeled unavailable when their credentials are absent; published synthetic adapters are never presented as live provider output |
@@ -78,7 +78,7 @@ Hard exclusions (EXCL-01 to EXCL-08) trigger instant REJECT regardless of score.
 | Backend | Python 3.12 · FastAPI · SQLAlchemy · Azure PostgreSQL |
 | Frontend | React 18 · Vite · TailwindCSS |
 | Streaming | Server-Sent Events (SSE) |
-| AI Models | OpenRouter model selected by `OPENROUTER_MODEL` |
+| AI Models | OpenAI model selected by `OPENAI_MODEL` |
 
 ---
 
@@ -165,7 +165,7 @@ TOKENROUTER_API_KEY=
 DAYTONA_API_KEY=
 NOSANA_API_KEY=
 SENSENOVA_API_KEY=          # SN-PLACEHOLDER-024 triggers proxy extraction
-KIMI_API_KEY=               # optional — TokenRouter used as primary
+KIMI_API_KEY=               # optional fallback — OpenAI used as primary
 ```
 
 ## Deployment preparation
@@ -187,7 +187,7 @@ The public Vercel demo now keeps the prepared walkthroughs and also exposes a
 fresh synthetic-only workflow. It accepts only the published Jane Smith / SLD9775A /
 S9812381D persona, limits MP4/MOV/WebM uploads to 20 MB, stores footage in Vercel
 Blob, persists idempotent claim state in a dedicated Azure PostgreSQL database,
-and executes real VideoDB analysis plus OpenRouter policy reasoning. Missing
+and executes real VideoDB analysis plus OpenAI policy reasoning. Missing
 hackathon sponsors are shown as unavailable or local policy adapters, never as
 live provider evidence. Every outcome and receipt is explicitly non-binding and
 demonstration-only; this is not a consumer insurance service.
@@ -195,3 +195,11 @@ demonstration-only; this is not a consumer insurance service.
 ---
 
 Built at the Agent Hackathon · June 2026
+
+## Direct OpenAI configuration
+
+Set `OPENAI_API_KEY` locally and in the backend deployment before deploying
+the migration. `OPENAI_MODEL` defaults to `gpt-4.1-mini`. OpenAI is the primary
+policy-reasoning provider and successful results record `openai-live`. Existing
+optional Kimi, TokenRouter and Anthropic fallbacks remain available; no
+OpenRouter credential is read.

@@ -394,7 +394,7 @@ export default function Upload({ onUploaded, onStartPreparedDemo, publicShowcase
       <div className="mt-8 pt-6 border-t border-gray-800">
         <p className="text-xs text-gray-600 text-center mb-3">Powered by</p>
         <div className="flex items-center justify-center gap-6 flex-wrap">
-          {["VideoDB live video analysis", "OpenRouter live policy reasoning", "Azure PostgreSQL", "Vercel Blob", "Local policy engine"].map((s) => (
+          {["VideoDB live video analysis", "OpenAI live policy reasoning", "Azure PostgreSQL", "Vercel Blob", "Local policy engine"].map((s) => (
             <span key={s} className="text-xs text-gray-600 font-medium bg-gray-900 border border-gray-800 px-2.5 py-1 rounded">
               {s}
             </span>

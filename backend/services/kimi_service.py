@@ -237,13 +237,13 @@ async def evaluate_claim(
     tokenrouter_key = os.getenv("TOKENROUTER_API_KEY", "").strip()
     tokenrouter_base = os.getenv("TOKENROUTER_BASE_URL", "https://api.tokenrouter.com/v1").strip()
     anthropic_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
-    openrouter_key = os.getenv("OPEN_ROUTER_API_KEY", "").strip()
+    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
 
     user_prompt = _build_user_prompt(video, identity, myinfo, nosana, fraud)
 
-    if openrouter_key:
-        model = os.getenv("OPENROUTER_MODEL", "openai/gpt-4.1-mini")
-        result = await _call_openai_compatible(openrouter_key, "https://openrouter.ai/api/v1", model, user_prompt, "openrouter-live")
+    if openai_key:
+        model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+        result = await _call_openai_compatible(openai_key, "https://api.openai.com/v1", model, user_prompt, "openai-live")
         if result:
             return result
 

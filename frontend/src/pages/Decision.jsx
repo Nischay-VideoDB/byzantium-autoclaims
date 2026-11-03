@@ -131,7 +131,7 @@ function NosanaCard({ nosana, prepared = false }) {
           <span className="text-xs text-gray-500 uppercase tracking-widest">Nosana GPU</span>
           <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full text-amber-300 bg-amber-500/10">Provider unavailable</span>
         </div>
-        <p className="text-xs text-gray-400 mt-3">No Nosana result was simulated or used. The live decision retains the actual VideoDB and OpenRouter stages.</p>
+        <p className="text-xs text-gray-400 mt-3">No Nosana result was simulated or used. The live decision retains the actual VideoDB and OpenAI stages.</p>
       </div>
     );
   }
@@ -213,7 +213,7 @@ export default function Decision({ data, onViewReceipt, prepared = false }) {
         <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">AI Reasoning</p>
         <p className="text-gray-300 text-sm leading-relaxed">{trust_score_result.reason}</p>
         <div className="mt-3 pt-3 border-t border-gray-800 flex items-center gap-2">
-          <span className="text-xs text-gray-500">{prepared ? "Prepared reasoning:" : "OpenRouter demo reasoning:"}</span>
+          <span className="text-xs text-gray-500">{prepared ? "Prepared reasoning:" : "OpenAI demo reasoning:"}</span>
           <span className="text-xs text-gray-400 italic">
             "{kimi_result.reason}"
           </span>

@@ -156,7 +156,7 @@ def health():
             "daytona": bool(os.getenv("DAYTONA_API_KEY", "").strip()),
             "nosana": bool(os.getenv("NOSANA_API_KEY", "").strip()),
             "myinfo": bool(os.getenv("MYINFO_CLIENT_ID", "").strip()),
-            "openrouter": bool(os.getenv("OPEN_ROUTER_API_KEY", "").strip()),
+            "openai": bool(os.getenv("OPENAI_API_KEY", "").strip()),
             "durable_database": DATABASE_URL.startswith("postgresql"),
             "blob": bool(os.getenv("BLOB_READ_WRITE_TOKEN", "").strip()),
         },

@@ -170,7 +170,7 @@ export default function Receipt({ claimId, onReset, preparedReceipt = null }) {
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-800 bg-gray-900/30">
           <p className="text-xs text-gray-600 text-center">
-            Synthetic public demo - not a claim, policy record, legal finding, evidence verification, or payout authorization. Live stages: VideoDB and OpenRouter; other stages are clearly labelled adapters or unavailable.
+            Synthetic public demo - not a claim, policy record, legal finding, evidence verification, or payout authorization. Live stages: VideoDB and OpenAI; other stages are clearly labelled adapters or unavailable.
           </p>
         </div>
       </div>

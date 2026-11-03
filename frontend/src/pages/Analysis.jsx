@@ -7,7 +7,7 @@ const PIPELINE_STEPS = [
   { key: "videodb",   label: "VideoDB Analysis",       icon: "🎬", desc: "Indexing scenes and spoken words from dashcam footage..." },
   { key: "terminal3", label: "Terminal 3 Identity",    icon: "🛡️", desc: "Verifying claimant identity via TEE attestation..." },
   { key: "myinfo",    label: "Synthetic Profile Adapter", icon: "🧪", desc: "Matching the published synthetic vehicle and licence fixture; live MyInfo is unavailable..." },
-  { key: "kimi",      label: "Kimi AI Evaluation",     icon: "🤖", desc: "Cross-referencing evidence against policy document..." },
+  { key: "kimi",      label: "OpenAI Evaluation",      icon: "🤖", desc: "Cross-referencing evidence against policy document..." },
   { key: "daytona",   label: "Daytona ClaimAgent",     icon: "🔒", desc: "Enforcing hard policy rules in secure sandbox..." },
   { key: "byzantium", label: "Byzantium Decision",     icon: "⚖️", desc: "Calculating final trust score and decision..." },
 ];
